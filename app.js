@@ -123,14 +123,18 @@ if (!storage.get('arquivo-source-flow-demo-v1', false)) {
 }
 let email = storage.get('arquivo-email-v1', 'leitor@exemplo.com');
 if (typeof email !== 'string') email = 'leitor@exemplo.com';
-let profileName = storage.get('arquivo-profile-name-v1', 'Leitor do Arquivo');
-profileName = typeof profileName === 'string' && profileName.trim() ? profileName.trim().slice(0, 80) : 'Leitor do Arquivo';
+let profileName = storage.get('arquivo-profile-name-v1', 'Leitor Bloom');
+profileName = typeof profileName === 'string' && profileName.trim() ? profileName.trim().slice(0, 80) : 'Leitor Bloom';
+if (email === 'leitor@exemplo.com' && profileName === 'Leitor do Arquivo') profileName = 'Leitor Bloom';
 const emailKey = value => String(value).trim().toLowerCase();
 const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const validUsername = value => /^[a-z0-9][a-z0-9._-]{2,29}$/i.test(value);
 const storedAccounts = storage.get('arquivo-accounts-v1', null);
 let accounts = Array.isArray(storedAccounts) ? storedAccounts.filter(account => account && typeof account.email === 'string' && validEmail(account.email) && typeof account.name === 'string' && account.name.trim() && account.name.length <= 80 && typeof account.username === 'string' && validUsername(account.username)).map(account => ({ email: emailKey(account.email), name: account.name.trim(), username: account.username.toLowerCase() })) : [];
-if (!accounts.some(account => account.email === 'leitor@exemplo.com')) accounts.push({ email: 'leitor@exemplo.com', name: emailKey(email) === 'leitor@exemplo.com' ? profileName : 'Leitor do Arquivo', username: 'leitor.arquivo' });
+accounts.forEach(account => {
+  if (account.email === 'leitor@exemplo.com' && account.name === 'Leitor do Arquivo') account.name = 'Leitor Bloom';
+});
+if (!accounts.some(account => account.email === 'leitor@exemplo.com')) accounts.push({ email: 'leitor@exemplo.com', name: emailKey(email) === 'leitor@exemplo.com' ? profileName : 'Leitor Bloom', username: 'leitor.bloom' });
 // Preserve access for an e-mail used before the prototype had account registration.
 if (storedAccounts === null && validEmail(email) && !accounts.some(account => account.email === emailKey(email))) accounts.push({ email: emailKey(email), name: profileName, username: 'leitor.anterior' });
 storage.set('arquivo-accounts-v1', accounts);
@@ -239,7 +243,7 @@ function themeCatalog() {
 }
 const allThemes = () => themeCatalog().map(t => t.name);
 const recordsForTheme = name => reflections.filter(r => r.tags.some(tag => normalize(tag) === normalize(name)));
-const themeDescription = theme => theme.description || 'Uma conexão entre suas leituras, ideias e reflexões.';
+const themeDescription = theme => theme.description || '';
 function toast(message) {
   const el = document.querySelector('#toast');
   clearTimeout(toastTimer);
@@ -253,18 +257,18 @@ function go(next) {
 }
 function loginHTML() {
   return `<section class="screen auth-screen login-screen" aria-labelledby="login-title">
-    <div class="auth-hero"><div class="mark">${icon('book-open')}<span class="mark-dot"></span></div><h1 id="login-title">Acesse seu Arquivo</h1><p>Onde leituras amadurecem em pensamento.</p></div>
+    <div class="auth-hero"><div class="mark">${icon('book-open')}<span class="mark-dot"></span></div><h1 id="login-title">Entrar</h1></div>
     <button class="google-button" data-action="google"><svg class="google-g" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.52h3.25c1.9-1.75 2.97-4.32 2.97-7.37Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.4l-3.25-2.52c-.9.6-2.04.96-3.37.96-2.6 0-4.8-1.76-5.58-4.13H3.06v2.6A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.42 13.91a6 6 0 0 1 0-3.82v-2.6H3.06a10 10 0 0 0 0 9.02l3.36-2.6Z"/><path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.83 1.5l2.87-2.88A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.94 5.49l3.36 2.6C7.2 7.72 9.4 5.96 12 5.96Z"/></svg>Continuar com o Google</button>
     <div class="separator">ou</div>
-    <form id="login-form" novalidate><div class="login-field-heading"><label class="field-label" for="email">E-mail</label><span>Identificação</span></div><div class="input-wrap">${icon('mail')}<input id="email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" value="${esc(loginDraft.email)}" required aria-describedby="email-help email-error"></div><p class="field-error" id="email-error" role="alert"></p>
-    <div id="signup-fields" hidden><p class="signup-notice" role="status">${icon('sparkle')}<span>Primeiro acesso detectado: preencha seu nome e @username para criar seu Arquivo.</span></p><div class="signup-field"><div class="login-field-heading"><label class="field-label" for="signup-name">Nome completo</label><span>Obrigatório</span></div><div class="input-wrap">${icon('user')}<input id="signup-name" name="name" autocomplete="name" maxlength="80" placeholder="Como você se chama?" value="${esc(loginDraft.name)}" required disabled aria-describedby="signup-name-error"></div><p class="field-error" id="signup-name-error" role="alert"></p></div><div class="signup-field"><div class="login-field-heading"><label class="field-label" for="signup-username">Nome de usuário (@username)</label><span>Obrigatório</span></div><div class="input-wrap">${icon('at')}<input id="signup-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" placeholder="seu.username" value="${esc(loginDraft.username)}" required disabled aria-describedby="signup-username-help signup-username-error"></div><p class="signup-username-help" id="signup-username-help">${icon('check')} Seu identificador único no Arquivo</p><p class="field-error" id="signup-username-error" role="alert"></p></div></div>
-    <button type="submit" class="primary-button login-submit"><span id="login-submit-label">Enviar código por e-mail</span>${icon('arrow')}</button><p class="help login-code-help" id="email-help">${icon('mail-check')}<span>Enviaremos um código de acesso de 6 dígitos para o seu e-mail, sem senha fixa.</span></p><p class="signup-terms" id="signup-terms" hidden>Ao prosseguir, você concorda com os princípios de uso e preservação intelectual do Arquivo.</p></form>
-    <p class="auth-footnote">${icon('lock')} Ambiente de demonstração · dados fictícios</p>
+    <form id="login-form" novalidate><div class="login-field-heading"><label class="field-label" for="email">E-mail</label></div><div class="input-wrap">${icon('mail')}<input id="email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" value="${esc(loginDraft.email)}" required aria-describedby="email-error"></div><p class="field-error" id="email-error" role="alert"></p>
+    <div id="signup-fields" hidden><div class="signup-field"><div class="login-field-heading"><label class="field-label" for="signup-name">Nome completo</label></div><div class="input-wrap">${icon('user')}<input id="signup-name" name="name" autocomplete="name" maxlength="80" placeholder="Como você se chama?" value="${esc(loginDraft.name)}" required disabled aria-describedby="signup-name-error"></div><p class="field-error" id="signup-name-error" role="alert"></p></div><div class="signup-field"><div class="login-field-heading"><label class="field-label" for="signup-username">Nome de usuário (@username)</label></div><div class="input-wrap">${icon('at')}<input id="signup-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" placeholder="seu.username" value="${esc(loginDraft.username)}" required disabled aria-describedby="signup-username-error"></div><p class="field-error" id="signup-username-error" role="alert"></p></div></div>
+    <button type="submit" class="primary-button login-submit"><span id="login-submit-label">Enviar código</span>${icon('arrow')}</button></form>
+    <p class="auth-footnote">${icon('lock')} Demonstração · dados locais</p>
   </section>`;
 }
 function codeHTML() {
-  return `<section class="screen auth-screen code-screen" aria-labelledby="code-title"><button class="back-button" data-action="back-login">${icon('back')} Voltar</button><div class="code-content"><div class="mark">${icon('mail-check')}</div><h1 id="code-title">Código de Acesso</h1><p class="code-description">${pendingAccess?.isNew ? 'Confirme seu primeiro acesso com o código enviado para' : 'Enviamos um código de 6 dígitos para'}</p><div class="email-line"><strong>${esc(pendingAccess?.email || email)}</strong><button class="text-button underlined" data-action="back-login">Alterar</button></div>
-    <form id="code-form" novalidate><div class="otp-fields" role="group" aria-label="Código de acesso de 6 dígitos">${Array.from({ length: 6 }, (_, i) => `<input class="otp-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" ${i === 0 ? 'autocomplete="one-time-code"' : 'autocomplete="off"'} aria-label="Dígito ${i + 1}" aria-describedby="code-error" placeholder="·" data-index="${i}">`).join('')}</div><p class="field-error" id="code-error" role="alert"></p><p class="demo-code">Para experimentar, use <button type="button" class="text-button" data-action="fill-code" aria-label="Preencher código de demonstração 482619">482619</button></p><button class="primary-button" type="submit">Confirmar e entrar ${icon('arrow')}</button></form><p class="resend">Não recebeu o código? <button class="text-button" id="resend" data-action="resend">Reenviar código</button></p></div><p class="auth-footnote">${icon('lock')} Seu próximo pensamento começa aqui.</p></section>`;
+  return `<section class="screen auth-screen code-screen" aria-labelledby="code-title"><button class="back-button" data-action="back-login">${icon('back')} Voltar</button><div class="code-content"><div class="mark">${icon('mail-check')}</div><h1 id="code-title">Código de Acesso</h1><p class="code-description">Código enviado para</p><div class="email-line"><strong>${esc(pendingAccess?.email || email)}</strong><button class="text-button underlined" data-action="back-login">Alterar</button></div>
+    <form id="code-form" novalidate><div class="otp-fields" role="group" aria-label="Código de acesso de 6 dígitos">${Array.from({ length: 6 }, (_, i) => `<input class="otp-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" ${i === 0 ? 'autocomplete="one-time-code"' : 'autocomplete="off"'} aria-label="Dígito ${i + 1}" aria-describedby="code-error" placeholder="·" data-index="${i}">`).join('')}</div><p class="field-error" id="code-error" role="alert"></p><p class="demo-code">Código de demonstração: <button type="button" class="text-button" data-action="fill-code" aria-label="Preencher código de demonstração 482619">482619</button></p><button class="primary-button" type="submit">Confirmar e entrar ${icon('arrow')}</button></form><p class="resend">Não recebeu o código? <button class="text-button" id="resend" data-action="resend">Reenviar código</button></p></div></section>`;
 }
 function updateLoginState() {
   const form = document.querySelector('#login-form');
@@ -272,11 +276,10 @@ function updateLoginState() {
   const value = form.elements.email.value.trim();
   const signup = validEmail(value) && form.elements.email.validity.valid && !accountFor(value);
   document.querySelector('#signup-fields').hidden = !signup;
-  document.querySelector('#signup-terms').hidden = !signup;
   form.elements.name.disabled = !signup;
   form.elements.username.disabled = !signup;
   document.querySelector('.auth-screen').classList.toggle('signup-screen', signup);
-  document.querySelector('#login-submit-label').textContent = signup ? 'Criar conta e receber código' : 'Enviar código por e-mail';
+  document.querySelector('#login-submit-label').textContent = signup ? 'Criar conta' : 'Enviar código';
 }
 function activateAccount(account) {
   email = account.email; profileName = account.name;
@@ -286,20 +289,22 @@ function activateAccount(account) {
 }
 function navHTML() {
   const link = (id, glyph, title) => `<a href="#${id}" data-action="nav-route" data-route="${id}" ${(route === id || (['tema', 'novo-tema'].includes(route) && id === 'temas') || (route === 'fonte' && id === 'obras')) ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${title}</span></a>`;
-  return `<div class="archive-nav-dock"><nav class="archive-nav" aria-label="Navegação principal">${link('inicio', 'archive', 'Início')}${link('fichas', 'copy', 'Fichas')}<details class="create-menu"><summary class="nav-create ${['criar', 'nova-fonte'].includes(route) ? 'active' : ''}" aria-label="Criar"><span class="nav-create-icon">${icon('write')}</span><span>Criar</span></summary><div class="create-menu-panel"><p>O que deseja criar?</p><button data-action="menu-create-entry"><span class="create-option-icon">${icon('write')}</span><span><strong>Nova ficha</strong><small>Registrar um trecho e uma reflexão</small></span>${icon('chevron')}</button><button data-action="menu-create-source"><span class="create-option-icon">${icon('book')}</span><span><strong>Nova fonte</strong><small>Adicionar uma obra ao arquivo</small></span>${icon('chevron')}</button><button data-action="menu-create-theme"><span class="create-option-icon">${icon('themes')}</span><span><strong>Novo tema</strong><small>Conectar suas ideias e leituras</small></span>${icon('chevron')}</button></div></details>${link('obras', 'book', 'Fontes')}${link('temas', 'themes', 'Temas')}</nav></div>`;
+  return `<div class="archive-nav-dock"><nav class="archive-nav" aria-label="Navegação principal">${link('inicio', 'archive', 'Início')}${link('fichas', 'copy', 'Fichas')}<details class="create-menu"><summary class="nav-create ${['criar', 'nova-fonte'].includes(route) ? 'active' : ''}" aria-label="Criar"><span class="nav-create-icon">${icon('write')}</span><span>Criar</span></summary><div class="create-menu-panel"><button data-action="menu-create-entry"><span class="create-option-icon">${icon('write')}</span><span><strong>Nova ficha</strong></span>${icon('chevron')}</button><button data-action="menu-create-source"><span class="create-option-icon">${icon('book')}</span><span><strong>Nova fonte</strong></span>${icon('chevron')}</button><button data-action="menu-create-theme"><span class="create-option-icon">${icon('themes')}</span><span><strong>Novo tema</strong></span>${icon('chevron')}</button></div></details>${link('obras', 'book', 'Fontes')}${link('temas', 'themes', 'Temas')}</nav></div>`;
 }
 function workRow(book) {
-  return `<button class="work-row" data-action="book" data-id="${book.id}">${icon('book')}<span class="work-info"><span class="work-title">${esc(book.title)}</span><span class="work-author">${esc(book.author)}</span></span>${icon('arrow')}</button>`;
+  return `<button class="work-row" data-action="book" data-id="${book.id}"><span class="work-cover" style="--book-color:${book.color}">${icon('book-open')}</span><span class="work-info"><span class="work-title">${esc(book.title)}</span><span class="work-author">${esc(book.author)}</span><span class="work-count">${countLabel(countFor(book.id), 'ficha', 'fichas')}</span></span>${icon('arrow')}</button>`;
 }
 function reflectionCard(r) {
   const b = bookFor(r.bookId);
-  return `<button class="reflection-card" data-action="reflection" data-id="${esc(r.id)}" aria-label="Ler reflexão sobre ${esc(b.title)}"><span class="reflection-meta"><span class="reflection-source">${esc(b.title)}</span><span class="reflection-author">${esc(b.author)}</span></span>${r.title ? `<span class="reflection-entry-title">${esc(r.title)}</span>` : ''}<span class="reflection-text">${formatText(r.text)}</span><span class="reflection-tags">${r.tags.map((tag) => esc(tagName(tag))).join('&nbsp; &nbsp;')}</span></button>`;
+  const parsedDate = new Date(r.date + 'T12:00:00Z');
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || '') && Number.isFinite(parsedDate.getTime()) ? new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(parsedDate) : '';
+  return `<button class="reflection-card" data-action="reflection" data-id="${esc(r.id)}" aria-label="Ler reflexão sobre ${esc(b.title)}"><span class="reflection-meta"><span class="reflection-bookmark">${icon('book-open')}</span><span class="reflection-attribution"><span class="reflection-source">${esc(b.title)}</span><span class="reflection-author">${esc(b.author)}${r.reference ? ` · ${esc(r.reference)}` : ''}</span></span>${date ? `<time class="reflection-date" datetime="${esc(r.date)}">${esc(date)}</time>` : ''}</span>${r.title ? `<span class="reflection-entry-title">${esc(r.title)}</span>` : ''}${r.quote ? `<span class="reflection-quote">“${esc(r.quote)}”</span>` : ''}<span class="reflection-text">${formatText(r.text)}</span><span class="reflection-footer"><span class="reflection-tags">${r.tags.map(tag => `<span>${esc(tagName(tag))}</span>`).join('')}</span><span class="reflection-open" aria-hidden="true">${icon('arrow')}</span></span></button>`;
 }
 function emptyHTML(title, description) { return `<div class="empty-state">${icon('search')}<h3>${esc(title)}</h3><p>${esc(description)}</p></div>`; }
 function dashboardHTML() {
-  const filtered = activeTheme ? reflections.filter((r) => r.tags.includes(activeTheme)) : reflections.slice(0, 2);
-  return `<div class="dashboard-grid"><div class="context-stack"><section class="module"><div class="section-heading"><h2>Fontes recentes</h2><button class="view-all" data-action="all-books">Ver todas</button></div><div class="work-list">${books.slice(0, 2).map(workRow).join('')}</div></section><section class="module"><div class="section-heading"><h2>Temas</h2><button class="view-all" data-action="all-themes">Ver todos</button></div><div class="chip-list">${allThemes().slice(0, 3).map((tag) => `<button class="chip ${activeTheme === tag ? 'active' : ''}" data-action="filter" data-tag="${esc(tag)}" aria-pressed="${activeTheme === tag}">${esc(tag)}</button>`).join('')}</div><p class="section-caption">Conexões entre o que você lê e pensa.</p></section></div>
-    <section class="module"><div class="section-heading"><h2>${activeTheme ? 'Reflexões por tema' : 'Últimas reflexões'}</h2><span class="eyebrow">${activeTheme ? filtered.length : reflections.length} fichas</span></div>${activeTheme ? `<div class="filter-note">${icon('tag')}${esc(activeTheme)}<button class="text-button" data-action="clear-filter">Limpar filtro</button></div>` : ''}<div class="reflection-list">${filtered.length ? filtered.map(reflectionCard).join('') : emptyHTML('Uma conexão por fazer', 'Crie uma reflexão e associe este tema.')}</div></section></div>`;
+  const recent = [...reflections].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const filtered = activeTheme ? recent.filter(r => r.tags.includes(activeTheme)) : recent.slice(0, 2);
+  return `<div class="dashboard-grid"><section class="module recent-reflections"><div class="section-heading"><h2>${activeTheme ? 'Reflexões por tema' : 'Últimas reflexões'}</h2><a class="view-all" href="#fichas">Ver todas ${icon('arrow')}</a></div>${activeTheme ? `<div class="filter-note">${icon('tag')}${esc(activeTheme)}<button class="text-button" data-action="clear-filter">Limpar filtro</button></div>` : ''}<div class="reflection-list">${filtered.length ? filtered.map(reflectionCard).join('') : emptyHTML('Uma conexão por fazer', 'Crie uma reflexão e associe este tema.')}</div></section><section class="module recent-sources"><div class="section-heading"><h2>Fontes recentes</h2><button class="view-all" data-action="all-books">Ver todas ${icon('arrow')}</button></div><div class="work-list">${books.slice(0, 2).map(workRow).join('')}</div></section></div>`;
 }
 function searchHTML() {
   const q = normalize(query);
@@ -309,7 +314,7 @@ function searchHTML() {
   return `<div class="search-results">${matchingBooks.length ? `<section><div class="section-heading"><h2>Fontes encontradas</h2><span class="eyebrow">${matchingBooks.length} obras</span></div><div class="books-grid">${matchingBooks.map(bookTile).join('')}</div></section>` : ''}${matchingReflections.length ? `<section><div class="section-heading"><h2>Reflexões encontradas</h2><span class="eyebrow">${matchingReflections.length} fichas</span></div><div class="reflection-list">${matchingReflections.map(reflectionCard).join('')}</div></section>` : ''}</div>`;
 }
 function homeHTML() {
-  return `<div class="action-row"><div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Buscar pensamentos, trechos, autores..." value="${esc(query)}" aria-label="Buscar no arquivo" autocomplete="off"><button class="clear-search" data-action="clear-search" aria-label="Limpar busca" ${query ? '' : 'hidden'}>${icon('x')}</button></div><button class="primary-button create-button" data-action="create">${icon('plus')} Escrever reflexão<span class="button-meta">Nova ficha</span></button></div><div id="home-results" aria-live="polite">${query.trim() ? searchHTML() : dashboardHTML()}</div>`;
+  return `<div class="action-row"><div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Buscar…" value="${esc(query)}" aria-label="Buscar no Bloom" autocomplete="off"><button class="clear-search" data-action="clear-search" aria-label="Limpar busca" ${query ? '' : 'hidden'}>${icon('x')}</button></div><button class="primary-button create-button" data-action="create">${icon('plus')} Nova ficha</button></div><div id="home-results" aria-live="polite">${query.trim() ? searchHTML() : dashboardHTML()}</div>`;
 }
 function matchingEntries() {
   const q = normalize(entryQuery.trim());
@@ -318,11 +323,11 @@ function matchingEntries() {
 }
 function entryResultsHTML() {
   const entries = matchingEntries();
-  return entries.length ? `<div class="reflection-list">${entries.map(reflectionCard).join('')}</div>` : emptyHTML(reflections.length ? 'Nenhuma ficha encontrada' : 'Seu arquivo começa aqui', reflections.length ? 'Busque por um título, trecho, autor ou tema.' : 'Crie sua primeira ficha para registrar uma reflexão.');
+  return entries.length ? `<div class="reflection-list">${entries.map(reflectionCard).join('')}</div>` : emptyHTML(reflections.length ? 'Nenhuma ficha encontrada' : 'Crie sua primeira ficha', reflections.length ? 'Busque por um título, trecho, autor ou tema.' : 'Crie sua primeira ficha para registrar uma reflexão.');
 }
 function entriesHTML() {
   const search = searchFieldHTML({
-    id: 'entry-search', placeholder: 'Buscar fichas, trechos, fontes ou temas...', label: 'Buscar fichas',
+    id: 'entry-search', placeholder: 'Buscar fichas…', label: 'Buscar fichas',
     value: entryQuery, clearAction: 'clear-entry-search', clearLabel: 'Limpar busca de fichas',
   });
   const controls = listControlsHTML({
@@ -339,7 +344,7 @@ function refreshEntries() {
   document.querySelector('#entries-count').textContent = countLabel(count, 'ficha', 'fichas');
   document.querySelector('[data-action="clear-entry-search"]').hidden = !entryQuery;
 }
-function bookTile(book) { return `<button class="book-tile" data-action="book" data-id="${book.id}"><span class="book-spine" style="--book-color:${book.color}">${icon('book-open')}</span><span><h2>${esc(book.title)}</h2><span class="work-author">${esc(book.author)}</span><span class="book-count">${countFor(book.id)} ${countFor(book.id) === 1 ? 'ficha' : 'fichas'} no arquivo</span></span></button>`; }
+function bookTile(book) { return `<button class="book-tile" data-action="book" data-id="${book.id}"><span class="book-spine" style="--book-color:${book.color}">${icon('book-open')}</span><span><h2>${esc(book.title)}</h2><span class="work-author">${esc(book.author)}</span><span class="book-count">${countFor(book.id)} ${countFor(book.id) === 1 ? 'ficha' : 'fichas'} no Bloom</span></span></button>`; }
 function sourceRow(book) {
   const entries = reflections.filter(r => r.bookId === book.id);
   const themes = new Set(entries.flatMap(r => r.tags)).size;
@@ -379,11 +384,11 @@ function openNewSource() {
   go('nova-fonte');
 }
 function newSourceHTML() {
-  return `<form id="source-form" class="new-source-form" novalidate><p class="new-source-intro">Cadastre uma referência para vincular às suas fichas.</p><section class="field"><div class="new-source-label"><label for="source-title">Título da obra <span>*</span></label><span>Obrigatório</span></div><div class="new-source-input">${icon('book-open')}<input id="source-title" name="title" placeholder="ex: Memórias Póstumas de Brás Cubas" value="${esc(newSourceDraft.title)}" maxlength="200" required aria-describedby="source-error"></div></section><section class="field"><div class="new-source-label"><label for="source-author">Autor(a) <span>*</span></label><span>Obrigatório</span></div><div class="new-source-input">${icon('user')}<input id="source-author" name="author" placeholder="ex: Machado de Assis" value="${esc(newSourceDraft.author)}" maxlength="120" required aria-describedby="source-error"></div><div class="frequent-authors" role="group" aria-label="Autores frequentes"><span>Frequentes:</span>${[['Machado de Assis', 'Machado de Assis'], ['Dostoiévski', 'Fiódor Dostoiévski'], ['Tolstói', 'Liev Tolstói']].map(([label, author]) => `<button type="button" data-action="suggest-source-author" data-author="${esc(author)}" aria-pressed="${normalize(newSourceDraft.author) === normalize(author)}"><span aria-hidden="true"></span>${esc(label)}</button>`).join('')}</div></section><section class="field"><div class="new-source-label"><label for="source-bibliography">Detalhes</label><span>Opcional</span></div><div class="new-source-input new-source-details">${icon('book')}<textarea id="source-bibliography" name="bibliography" placeholder="ex: 1881, Ed. 34, Trad. Rubens Figueiredo" maxlength="1000">${esc(newSourceDraft.bibliography)}</textarea></div></section><label class="source-immediate"><span class="source-immediate-icon">${icon('book')}</span><span class="source-immediate-copy"><span class="source-immediate-title" id="source-immediate-title">Fichamento Imediato</span><span class="source-immediate-help" id="source-immediate-help">Abrir automaticamente uma nova ficha em branco indexada a esta obra após salvar.</span></span><input id="source-immediate" name="immediate" type="checkbox" role="switch" ${newSourceDraft.immediate ? 'checked' : ''} aria-labelledby="source-immediate-title" aria-describedby="source-immediate-help"><span class="source-switch" aria-hidden="true"></span></label><p class="field-error" id="source-error" role="alert"></p><button class="primary-button new-source-save" type="submit">${icon('check')} Salvar Fonte</button></form>`;
+  return `<form id="source-form" class="new-source-form" novalidate><section class="field"><div class="new-source-label"><label for="source-title">Título da obra <span>*</span></label></div><div class="new-source-input">${icon('book-open')}<input id="source-title" name="title" placeholder="ex: Memórias Póstumas de Brás Cubas" value="${esc(newSourceDraft.title)}" maxlength="200" required aria-describedby="source-error"></div></section><section class="field"><div class="new-source-label"><label for="source-author">Autor(a) <span>*</span></label></div><div class="new-source-input">${icon('user')}<input id="source-author" name="author" placeholder="ex: Machado de Assis" value="${esc(newSourceDraft.author)}" maxlength="120" required aria-describedby="source-error"></div><div class="frequent-authors" role="group" aria-label="Autores frequentes"><span>Frequentes:</span>${[['Machado de Assis', 'Machado de Assis'], ['Dostoiévski', 'Fiódor Dostoiévski'], ['Tolstói', 'Liev Tolstói']].map(([label, author]) => `<button type="button" data-action="suggest-source-author" data-author="${esc(author)}" aria-pressed="${normalize(newSourceDraft.author) === normalize(author)}"><span aria-hidden="true"></span>${esc(label)}</button>`).join('')}</div></section><section class="field"><div class="new-source-label"><label for="source-bibliography">Detalhes</label><span>Opcional</span></div><div class="new-source-input new-source-details">${icon('book')}<textarea id="source-bibliography" name="bibliography" placeholder="ex: 1881, Ed. 34, Trad. Rubens Figueiredo" maxlength="1000">${esc(newSourceDraft.bibliography)}</textarea></div></section><label class="source-immediate"><span class="source-immediate-icon">${icon('book')}</span><span class="source-immediate-copy"><span class="source-immediate-title" id="source-immediate-title">Criar ficha ao salvar</span></span><input id="source-immediate" name="immediate" type="checkbox" role="switch" ${newSourceDraft.immediate ? 'checked' : ''} aria-labelledby="source-immediate-title"><span class="source-switch" aria-hidden="true"></span></label><p class="field-error" id="source-error" role="alert"></p><button class="primary-button new-source-save" type="submit">${icon('check')} Salvar Fonte</button></form>`;
 }
 function themesHTML() {
   const search = searchFieldHTML({
-    id: 'theme-search', placeholder: 'Buscar por tema ou conceito...', label: 'Buscar por tema ou conceito',
+    id: 'theme-search', placeholder: 'Buscar temas…', label: 'Buscar por tema ou conceito',
     value: themeQuery, clearAction: 'clear-theme-search', clearLabel: 'Limpar busca de temas',
     className: 'sources-search themes-search search-wrap',
   });
@@ -401,7 +406,7 @@ function matchingThemes() {
 }
 function themeResultsHTML() {
   const matches = matchingThemes();
-  return matches.length ? `<div class="theme-list">${matches.map((t, i) => `<button class="theme-card" data-action="theme-details" data-tag="${esc(t.name)}" aria-label="Abrir tema: ${esc(t.name)}"><span class="theme-card-heading"><span class="theme-dot"></span><span class="theme-card-title">${esc(t.name)}</span>${icon('arrow')}</span><span class="theme-card-description">${esc(themeDescription(t))}</span><span class="theme-card-footer"><span class="theme-card-count">${icon('write')} ${t.fichas} ${t.fichas === 1 ? 'ficha' : 'fichas'}</span><span class="theme-card-books">${icon('book-open')} ${t.obras} ${t.obras === 1 ? 'obra' : 'obras'}</span><span class="theme-card-index">#${String(i + 1).padStart(2, '0')}</span></span></button>`).join('')}</div>` : emptyHTML('Nenhum tema encontrado', 'Experimente outro tema ou conceito.');
+  return matches.length ? `<div class="theme-list">${matches.map((t, i) => `<button class="theme-card" data-action="theme-details" data-tag="${esc(t.name)}" aria-label="Abrir tema: ${esc(t.name)}"><span class="theme-card-heading"><span class="theme-dot"></span><span class="theme-card-title">${esc(t.name)}</span>${icon('arrow')}</span>${t.description ? `<span class="theme-card-description">${esc(t.description)}</span>` : ''}<span class="theme-card-footer"><span class="theme-card-count">${icon('write')} ${t.fichas} ${t.fichas === 1 ? 'ficha' : 'fichas'}</span><span class="theme-card-books">${icon('book-open')} ${t.obras} ${t.obras === 1 ? 'obra' : 'obras'}</span></span></button>`).join('')}</div>` : emptyHTML('Nenhum tema encontrado', 'Experimente outro tema ou conceito.');
 }
 function refreshThemes() {
   document.querySelector('#themes-results').innerHTML = themeResultsHTML();
@@ -418,13 +423,13 @@ function themeDetailHTML() {
   const theme = themeCatalog().find(t => t.name === selectedTheme);
   const entries = recordsForTheme(theme.name);
   const sources = books.filter(b => entries.some(r => r.bookId === b.id));
-  return `<div class="theme-detail"><button class="theme-back text-button" data-action="theme-back">${icon('back')} Todos os temas</button><div class="theme-title-row"><h2>${esc(theme.name)}</h2><button class="icon-button" data-action="edit-theme" aria-label="Editar tema">${icon('pencil')}</button></div>${theme.description ? `<p class="theme-definition">“${esc(theme.description)}”</p>` : '<p class="theme-definition theme-no-definition">Adicione uma definição para este tema.</p>'}<button class="primary-button theme-add-reflection" data-action="theme-create">${icon('plus')} Adicionar reflexão</button><section class="theme-sources"><h3>${icon('book-open')} Fontes que inspiram reflexões sobre o tema</h3><div class="theme-source-list">${sources.length ? sources.map(b => { const count = entries.filter(r => r.bookId === b.id).length; return `<button class="theme-source-row" data-action="theme-source" data-id="${b.id}" aria-label="Ver ${count} fichas de ${esc(b.title)} neste tema">${icon('book')}<span class="work-info"><span class="work-title">${esc(b.title)}</span><span class="work-author">${esc(b.author)}</span></span><span class="theme-source-count">${count} ${count === 1 ? 'ficha' : 'fichas'}</span>${icon('chevron')}</button>`; }).join('') : emptyHTML('Uma conexão por fazer', 'Adicione uma reflexão com este tema para reunir suas fontes aqui.')}</div></section></div>`;
+  return `<div class="theme-detail"><button class="theme-back text-button" data-action="theme-back">${icon('back')} Todos os temas</button><div class="theme-title-row"><h2>${esc(theme.name)}</h2><button class="icon-button" data-action="edit-theme" aria-label="Editar tema">${icon('pencil')}</button></div>${theme.description ? `<p class="theme-definition">“${esc(theme.description)}”</p>` : ''}<button class="primary-button theme-add-reflection" data-action="theme-create">${icon('plus')} Adicionar reflexão</button><section class="theme-sources"><h3>${icon('book-open')} Fontes</h3><div class="theme-source-list">${sources.length ? sources.map(b => { const count = entries.filter(r => r.bookId === b.id).length; return `<button class="theme-source-row" data-action="theme-source" data-id="${b.id}" aria-label="Ver ${count} fichas de ${esc(b.title)} neste tema">${icon('book')}<span class="work-info"><span class="work-title">${esc(b.title)}</span><span class="work-author">${esc(b.author)}</span></span><span class="theme-source-count">${count} ${count === 1 ? 'ficha' : 'fichas'}</span>${icon('chevron')}</button>`; }).join('') : emptyHTML('Uma conexão por fazer', 'Adicione uma reflexão com este tema para reunir suas fontes aqui.')}</div></section></div>`;
 }
 function openSheet(title, subtitle, body, footer = '', className = '') {
   showDialog(`<div class="sheet-handle" aria-hidden="true"></div><header class="sheet-header"><div><h2 id="modal-title">${esc(title)}</h2>${subtitle ? `<p>${esc(subtitle)}</p>` : ''}</div><button class="sheet-close" data-action="close-modal" aria-label="Fechar">${icon('x')}</button></header>${body}${footer}`, 'sheet ' + className);
 }
 function themeEntryCard(r, index) {
-  return `<article class="theme-entry-card" data-entry="${esc(r.id)}"><div class="theme-entry-reference"><span>${icon('book')} ${esc(r.reference || 'Referência não informada')}</span><span class="entry-number">Ficha #${String(index + 1).padStart(2, '0')}</span></div>${r.title ? `<h3 class="theme-entry-title">${esc(r.title)}</h3>` : ''}${r.quote ? `<blockquote class="theme-entry-quote">«${esc(r.quote)}»</blockquote>` : ''}<div class="reader-reflection"><h3>${icon('write')} Reflexão do leitor</h3><p>${formatText(r.text)}</p></div><div class="theme-entry-footer"><div class="chip-list">${r.tags.map(tag => `<button class="chip ${normalize(tag) === normalize(selectedTheme) ? 'active' : ''}" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><details class="entry-actions"><summary aria-label="Ações da ficha ${index + 1}">${icon('more')}</summary><div><button data-action="theme-edit-entry" data-id="${esc(r.id)}">${icon('pencil')} Editar ficha</button><button data-action="reflection" data-id="${esc(r.id)}">${icon('book-open')} Ver ficha</button></div></details></div></article>`;
+  return `<article class="theme-entry-card" data-entry="${esc(r.id)}"><div class="theme-entry-reference"><span>${icon('book')} ${esc(r.reference || 'Referência não informada')}</span><span class="entry-number">Ficha #${String(index + 1).padStart(2, '0')}</span></div>${r.title ? `<h3 class="theme-entry-title">${esc(r.title)}</h3>` : ''}${r.quote ? `<blockquote class="theme-entry-quote">«${esc(r.quote)}»</blockquote>` : ''}<div class="reader-reflection"><h3>${icon('write')} Reflexão</h3><p>${formatText(r.text)}</p></div><div class="theme-entry-footer"><div class="chip-list">${r.tags.map(tag => `<button class="chip ${normalize(tag) === normalize(selectedTheme) ? 'active' : ''}" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><details class="entry-actions"><summary aria-label="Ações da ficha ${index + 1}">${icon('more')}</summary><div><button data-action="theme-edit-entry" data-id="${esc(r.id)}">${icon('pencil')} Editar ficha</button><button data-action="reflection" data-id="${esc(r.id)}">${icon('book-open')} Ver ficha</button></div></details></div></article>`;
 }
 function openThemeSource(id) {
   const b = bookFor(id);
@@ -435,7 +440,7 @@ function openThemeSource(id) {
 function openThemeEdit() {
   const theme = themeCatalog().find(t => t.name === selectedTheme);
   if (!theme) return;
-  openSheet('Editar Tema', theme.name, `<form id="theme-edit-form" class="sheet-scroll theme-edit-form" novalidate><div class="field"><div class="theme-field-label"><label for="edit-theme-name">Nome do tema <span>(Obrigatório)</span></label><output id="theme-name-count" for="edit-theme-name">${theme.name.length}/40</output></div><input id="edit-theme-name" name="name" value="${esc(theme.name)}" maxlength="40" required aria-describedby="theme-edit-error"></div><div class="field"><div class="theme-field-label"><label for="edit-theme-description">Definição ou reflexão conceitual <span class="optional-label">(Opcional)</span></label><output id="theme-description-count" for="edit-theme-description">${theme.description.length}/280</output></div><textarea id="edit-theme-description" name="description" maxlength="280">${esc(theme.description)}</textarea></div><p class="field-error" id="theme-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer edit-theme-footer"><button class="primary-button" type="submit" form="theme-edit-form">${icon('check')} Salvar Alterações</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="delete-theme">${icon('trash')} Excluir tema</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'edit-theme-sheet');
+  openSheet('Editar Tema', theme.name, `<form id="theme-edit-form" class="sheet-scroll theme-edit-form" novalidate><div class="field"><div class="theme-field-label"><label for="edit-theme-name">Nome do tema <span>(Obrigatório)</span></label><output id="theme-name-count" for="edit-theme-name">${theme.name.length}/40</output></div><input id="edit-theme-name" name="name" value="${esc(theme.name)}" maxlength="40" required aria-describedby="theme-edit-error"></div><div class="field"><div class="theme-field-label"><label for="edit-theme-description">Descrição <span class="optional-label">(Opcional)</span></label><output id="theme-description-count" for="edit-theme-description">${theme.description.length}/280</output></div><textarea id="edit-theme-description" name="description" maxlength="280">${esc(theme.description)}</textarea></div><p class="field-error" id="theme-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer edit-theme-footer"><button class="primary-button" type="submit" form="theme-edit-form">${icon('check')} Salvar</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="delete-theme">${icon('trash')} Excluir tema</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'edit-theme-sheet');
 }
 function persistThemeChange(oldName, replacement) {
   const updateTags = tags => [...new Set(tags.flatMap(tag => normalize(tag) === normalize(oldName) ? (replacement ? [replacement] : []) : [tag]))];
@@ -450,7 +455,7 @@ function persistThemeChange(oldName, replacement) {
   return themesSaved && entriesSaved;
 }
 function confirmThemeDelete() {
-  openSheet('Excluir tema?', selectedTheme, `<div class="sheet-scroll delete-theme-description"><p>O tema será removido das fichas associadas. Suas fontes e reflexões continuarão no arquivo.</p></div>`, `<footer class="sheet-footer"><button class="secondary-button delete-theme-button" data-action="confirm-delete-theme">${icon('trash')} Excluir tema</button><button class="sheet-dismiss" data-action="edit-theme">Cancelar</button></footer>`, 'delete-theme-sheet');
+  openSheet('Excluir tema?', selectedTheme, `<div class="sheet-scroll delete-theme-description"><p>O tema será removido das fichas associadas. Suas fontes e reflexões continuarão no Bloom.</p></div>`, `<footer class="sheet-footer"><button class="secondary-button delete-theme-button" data-action="confirm-delete-theme">${icon('trash')} Excluir tema</button><button class="sheet-dismiss" data-action="edit-theme">Cancelar</button></footer>`, 'delete-theme-sheet');
 }
 function deleteSelectedTheme() {
   const theme = themeCatalog().find(t => t.name === selectedTheme);
@@ -468,15 +473,16 @@ function openNewTheme() {
   go('novo-tema');
 }
 function newThemeHTML() {
-  return `<form class="new-theme-form" id="theme-form" novalidate><p class="new-theme-intro">Crie um eixo temático para agrupar ideias e citações.</p><section class="new-theme-field"><div class="new-theme-label"><label for="theme-name">Nome do tema <span aria-hidden="true">◆</span><span class="sr-only"> (obrigatório)</span></label><output id="new-theme-name-count" for="theme-name">${newThemeDraft.name.length}/40</output></div><input id="theme-name" name="name" placeholder="ex: Morte, Culpa, Oportunidades Perdidas" maxlength="40" value="${esc(newThemeDraft.name)}" required aria-describedby="new-theme-name-help theme-error"><p class="new-theme-help" id="new-theme-name-help">Termos concisos facilitam cruzamentos bibliográficos.</p></section><section class="new-theme-field"><div class="new-theme-label"><label for="theme-description">Definição ou reflexão conceitual</label><output id="new-theme-description-count" for="theme-description">${newThemeDraft.description.length}/280</output></div><textarea id="theme-description" name="description" placeholder="Como você define este tema no seu fichário pessoal? Sintetize em poucas linhas..." maxlength="280">${esc(newThemeDraft.description)}</textarea></section><p class="field-error" id="theme-error" role="alert"></p><button type="submit" class="primary-button new-theme-save">${icon('check')} Salvar Tema</button></form>`;
+  return `<form class="new-theme-form" id="theme-form" novalidate><section class="new-theme-field"><div class="new-theme-label"><label for="theme-name">Nome do tema <span aria-hidden="true">◆</span><span class="sr-only"> (obrigatório)</span></label><output id="new-theme-name-count" for="theme-name">${newThemeDraft.name.length}/40</output></div><input id="theme-name" name="name" placeholder="Ex.: Memória" maxlength="40" value="${esc(newThemeDraft.name)}" required aria-describedby="theme-error"></section><section class="new-theme-field"><div class="new-theme-label"><label for="theme-description">Descrição</label><output id="new-theme-description-count" for="theme-description">${newThemeDraft.description.length}/280</output></div><textarea id="theme-description" name="description" placeholder="Opcional" maxlength="280">${esc(newThemeDraft.description)}</textarea></section><p class="field-error" id="theme-error" role="alert"></p><button type="submit" class="primary-button new-theme-save">${icon('check')} Salvar Tema</button></form>`;
 }
 function archiveHTML() {
   const title = { inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: 'Temas', fonte: 'Fontes', 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', criar: editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[route];
   const catalog = ['obras', 'temas', 'fichas'].includes(route);
-  const screenClass = { criar: 'entry-screen', fichas: 'entries-screen', obras: 'sources-screen', temas: 'themes-screen', tema: 'theme-detail-screen', fonte: 'source-detail-screen', 'novo-tema': 'new-theme-screen', 'nova-fonte': 'new-source-screen' }[route] || '';
-  const heading = ['novo-tema', 'nova-fonte'].includes(route) ? `<div class="new-theme-heading"><button class="icon-button" data-action="${route === 'nova-fonte' ? 'cancel-new-source' : 'cancel-new-theme'}" aria-label="Fechar criação de ${route === 'nova-fonte' ? 'fonte' : 'tema'}">${icon('x')}</button><h1>${title}</h1></div>` : `<div ${catalog ? 'class="sources-heading"' : ''}>${catalog ? `<span class="sources-heading-icon">${icon(route === 'temas' ? 'book-open' : route === 'fichas' ? 'copy' : 'book')}</span>` : ['tema', 'fonte'].includes(route) ? '' : '<p class="eyebrow">Seu arquivo pessoal</p>'}<h1>${title}</h1></div>`;
+  const screenClass = { inicio: 'home-screen', criar: 'entry-screen', fichas: 'entries-screen', obras: 'sources-screen', temas: 'themes-screen', tema: 'theme-detail-screen', fonte: 'source-detail-screen', 'novo-tema': 'new-theme-screen', 'nova-fonte': 'new-source-screen' }[route] || '';
+  const heading = ['novo-tema', 'nova-fonte'].includes(route) ? `<div class="new-theme-heading"><button class="icon-button" data-action="${route === 'nova-fonte' ? 'cancel-new-source' : 'cancel-new-theme'}" aria-label="Fechar criação de ${route === 'nova-fonte' ? 'fonte' : 'tema'}">${icon('x')}</button><h1>${title}</h1></div>` : `<h1>${title}</h1>`;
   const content = { criar: editorHTML, fichas: entriesHTML, obras: booksHTML, temas: themesHTML, tema: themeDetailHTML, fonte: sourceDetailHTML, 'novo-tema': newThemeHTML, 'nova-fonte': newSourceHTML }[route] || homeHTML;
-  return `<section class="screen archive-screen ${screenClass}"><div class="archive-body"><header class="archive-header">${heading}<button class="profile-button" data-action="profile" aria-label="Abrir perfil">${icon('user')}</button></header><div class="archive-content">${content()}</div></div>${navHTML()}</section>`;
+  const header = catalog || ['inicio', 'tema', 'fonte'].includes(route) ? `<h1 class="sr-only">${title}</h1>` : `<header class="archive-header">${heading}</header>`;
+  return `<section class="screen archive-screen ${screenClass}"><div class="archive-body">${header}<div class="archive-content">${content()}</div></div>${navHTML()}</section>`;
 }
 function updateResend() {
   const button = document.querySelector('#resend');
@@ -517,8 +523,10 @@ function render() {
     if (editor.context?.theme) editorReturn = 'tema/' + encodeURIComponent(editor.context.theme);
     if (editor.context?.sourceId) editorReturn = 'fonte/' + encodeURIComponent(editor.context.sourceId);
   }
+  document.body.dataset.view = ['login', 'codigo'].includes(route) ? 'auth' : 'archive';
+  document.querySelector('.brand').href = document.body.dataset.view === 'archive' ? '#inicio' : '#login';
+  document.querySelector('.brand').setAttribute('aria-label', 'Bloom');
   app.innerHTML = route === 'login' ? loginHTML() : route === 'codigo' ? codeHTML() : archiveHTML();
-  updateFlow();
   window.scrollTo({ top: 0, behavior: 'instant' });
   if (route === 'codigo') {
     if (!resendUntil) startCountdown();
@@ -528,14 +536,8 @@ function render() {
   } else if (route === 'login') {
     updateLoginState();
   } else app.focus({ preventScroll: true });
-  document.title = `${{ login: 'Acesse seu Arquivo', codigo: 'Código de Acesso', inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: selectedTheme, fonte: bookFor(selectedSource)?.title, 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', criar: editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[route]} · Arquivo`;
+  document.title = `${{ login: 'Acesse Bloom', codigo: 'Código de Acesso', inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: selectedTheme, fonte: bookFor(selectedSource)?.title, 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', criar: editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[route]} · Bloom`;
   if (route === 'tema' && pendingSourceSheet?.theme === selectedTheme) { const { bookId } = pendingSourceSheet; pendingSourceSheet = null; openThemeSource(bookId); }
-}
-function updateFlow() {
-  document.querySelectorAll('[data-step]').forEach((el) => {
-    const active = el.dataset.step === (['fichas', 'obras', 'temas', 'tema', 'fonte', 'criar', 'novo-tema', 'nova-fonte'].includes(route) ? 'inicio' : route);
-    if (active) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
-  });
 }
 function refreshHome() {
   const results = document.querySelector('#home-results');
@@ -570,7 +572,7 @@ function sourceFilterStatus() {
   return sourceEntryQuery.trim() ? `${count} ${count === 1 ? 'ficha encontrada' : 'fichas encontradas'}` : sourceTheme ? `Exibindo ${sourceTheme} (${count})` : `Exibindo todas fichas (${count})`;
 }
 function sourceEntryCard(r, index) {
-  return `<article class="source-entry-card" data-entry="${esc(r.id)}"><button class="source-entry-main" data-action="source-edit-entry" data-id="${esc(r.id)}" aria-label="Editar ficha ${index + 1}"><span class="source-entry-header"><span class="source-entry-heading">${icon('book')}<span>${esc(r.title || r.reference || 'Reflexão da leitura')}</span></span><span class="entry-number">${esc(r.identifier || `Ficha #${String(index + 1).padStart(2, '0')}`)}</span></span>${r.quote ? `<span class="source-entry-quote">«${esc(r.quote)}»</span>` : ''}<span class="source-entry-text"><strong>Reflexão:</strong> ${formatText(r.text)}</span></button><div class="source-entry-tags">${r.tags.map(tag => `<button data-action="source-filter" data-tag="${esc(tag)}" class="${sourceTheme && normalize(tag) === normalize(sourceTheme) ? 'active' : ''}">${esc(tagName(tag))}</button>`).join('')}</div></article>`;
+  return `<article class="source-entry-card" data-entry="${esc(r.id)}"><button class="source-entry-main" data-action="source-edit-entry" data-id="${esc(r.id)}" aria-label="Editar ficha ${index + 1}"><span class="source-entry-header"><span class="source-entry-heading">${icon('book')}<span>${esc(r.title || r.reference || 'Reflexão da leitura')}</span></span><span class="entry-number">${esc(r.identifier || `Ficha #${String(index + 1).padStart(2, '0')}`)}</span></span>${r.quote ? `<span class="source-entry-quote">«${esc(r.quote)}»</span>` : ''}<span class="source-entry-text">${formatText(r.text)}</span></button><div class="source-entry-tags">${r.tags.map(tag => `<button data-action="source-filter" data-tag="${esc(tag)}" class="${sourceTheme && normalize(tag) === normalize(sourceTheme) ? 'active' : ''}">${esc(tagName(tag))}</button>`).join('')}</div></article>`;
 }
 function sourceEntryResultsHTML() {
   const entries = matchingSourceEntries();
@@ -594,13 +596,13 @@ function persistSources() {
 function openSourceEdit() {
   const b = bookFor(selectedSource);
   if (!b) return;
-  openSheet('Editar Fonte', b.title, `<form id="source-edit-form" class="sheet-scroll source-edit-form" novalidate><div class="field"><div class="source-field-label"><label for="edit-source-title">Título da obra</label><span>Obrigatório</span></div><input id="edit-source-title" name="title" value="${esc(b.title)}" maxlength="200" required aria-describedby="source-edit-error"></div><div class="field"><div class="source-field-label"><label for="edit-source-author">Autor(a)</label><span>Obrigatório</span></div><input id="edit-source-author" name="author" value="${esc(b.author)}" maxlength="120" required aria-describedby="source-edit-error"></div><div class="field"><div class="source-field-label"><label for="edit-source-bibliography">Detalhes da Edição / Bibliografia</label><span class="optional-label">Opcional</span></div><textarea id="edit-source-bibliography" name="bibliography" maxlength="1000" placeholder="Ano, edição, gênero, editora…">${esc(b.bibliography ?? (b.year ? b.year : ''))}</textarea></div><p class="field-error" id="source-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer edit-source-footer"><button class="primary-button" type="submit" form="source-edit-form">${icon('check')} Salvar Alterações</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="delete-source">${icon('trash')} Excluir fonte</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'edit-source-sheet');
+  openSheet('Editar Fonte', b.title, `<form id="source-edit-form" class="sheet-scroll source-edit-form" novalidate><div class="field"><div class="source-field-label"><label for="edit-source-title">Título da obra</label></div><input id="edit-source-title" name="title" value="${esc(b.title)}" maxlength="200" required aria-describedby="source-edit-error"></div><div class="field"><div class="source-field-label"><label for="edit-source-author">Autor(a)</label></div><input id="edit-source-author" name="author" value="${esc(b.author)}" maxlength="120" required aria-describedby="source-edit-error"></div><div class="field"><div class="source-field-label"><label for="edit-source-bibliography">Detalhes da Edição / Bibliografia</label><span class="optional-label">Opcional</span></div><textarea id="edit-source-bibliography" name="bibliography" maxlength="1000" placeholder="Ano, edição, gênero, editora…">${esc(b.bibliography ?? (b.year ? b.year : ''))}</textarea></div><p class="field-error" id="source-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer edit-source-footer"><button class="primary-button" type="submit" form="source-edit-form">${icon('check')} Salvar</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="delete-source">${icon('trash')} Excluir fonte</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'edit-source-sheet');
 }
 function confirmSourceDelete() {
   const b = bookFor(selectedSource);
   if (!b) return;
   const count = countFor(b.id);
-  openSheet('Excluir fonte?', b.title, `<div class="sheet-scroll delete-theme-description"><p>A fonte${count ? ` e ${count === 1 ? 'sua ficha' : `suas ${count} fichas associadas`}` : ''} ${count ? 'serão excluídas' : 'será excluída'} deste arquivo.</p></div>`, `<footer class="sheet-footer"><button class="secondary-button delete-theme-button" data-action="confirm-delete-source">${icon('trash')} Excluir fonte</button><button class="sheet-dismiss" data-action="edit-source">Cancelar</button></footer>`, 'delete-theme-sheet');
+  openSheet('Excluir fonte?', b.title, `<div class="sheet-scroll delete-theme-description"><p>A fonte${count ? ` e ${count === 1 ? 'sua ficha' : `suas ${count} fichas associadas`}` : ''} ${count ? 'serão excluídas' : 'será excluída'} do Bloom.</p></div>`, `<footer class="sheet-footer"><button class="secondary-button delete-theme-button" data-action="confirm-delete-source">${icon('trash')} Excluir fonte</button><button class="sheet-dismiss" data-action="edit-source">Cancelar</button></footer>`, 'delete-theme-sheet');
 }
 function deleteSelectedSource() {
   const id = selectedSource;
@@ -613,7 +615,7 @@ function deleteSelectedSource() {
   const entriesSaved = storage.set('arquivo-reflections-v1', reflections);
   const deletedSaved = storage.set('arquivo-deleted-sources-v1', deletedSources);
   sourceQuery = ''; go('obras');
-  toast(sourcesSaved && entriesSaved && deletedSaved ? 'Fonte excluída do seu Arquivo.' : 'Fonte excluída nesta sessão.');
+  toast(sourcesSaved && entriesSaved && deletedSaved ? 'Fonte excluída do Bloom.' : 'Fonte excluída nesta sessão.');
 }
 function openSourceEntryEdit(id, fromList = false) {
   const record = reflections.find(r => r.id === id && (fromList || r.bookId === selectedSource));
@@ -633,7 +635,7 @@ function sourceEntryTagsHTML() {
 function showSourceEntryEdit() {
   const draft = sourceEntryDraft;
   if (!draft) return;
-  openSheet(draft.fromList ? (draft.identifier || `Ficha #${draft.number}`) : `Editar Ficha #${draft.number}`, draft.title || draft.reference || 'Reflexão da leitura', `<form id="source-entry-edit-form" class="sheet-scroll ficha-edit-form" novalidate>${draft.fromList ? fichaSourceFieldHTML() : ''}<div class="field"><label for="ficha-title">Título / Referência <span class="optional-label">(Opcional)</span></label><input id="ficha-title" name="title" value="${esc(draft.title)}" maxlength="200" aria-describedby="ficha-edit-error"></div><div class="ficha-edit-grid"><div class="field"><label for="ficha-reference">Capítulo / Cena / Pág.</label><input id="ficha-reference" name="reference" value="${esc(draft.reference)}" maxlength="160" placeholder="Capítulo, cena ou página"></div><div class="field"><label for="ficha-identifier">Identificador</label><input id="ficha-identifier" name="identifier" value="${esc(draft.identifier)}" placeholder="Ficha #${draft.number}" maxlength="40"></div></div><div class="field"><label for="ficha-quote">Trecho citado da obra</label><div class="ficha-quote-field"><textarea id="ficha-quote" name="quote" maxlength="5000" placeholder="Adicione o trecho citado…">${esc(draft.quote)}</textarea></div></div><div class="field"><label for="ficha-text">Minha Síntese &amp; Reflexão <span aria-hidden="true">*</span></label><textarea id="ficha-text" name="text" maxlength="5000" required aria-describedby="ficha-edit-error">${esc(draft.text)}</textarea></div><div class="field"><div class="ficha-tags-heading"><label>Temas / Tags</label><span id="ficha-tag-count">${draft.tags.length} associados</span></div><div class="ficha-edit-tags" id="ficha-edit-tags">${sourceEntryTagsHTML()}<button class="ficha-new-tag" type="button" data-action="ficha-new-tag">${icon('plus')} Novo tema</button></div><div class="ficha-tag-composer" id="ficha-tag-composer" hidden><label class="sr-only" for="ficha-tag-input">Nome do tema</label><input id="ficha-tag-input" list="ficha-theme-options" maxlength="50" placeholder="Escolha ou digite um tema" autocomplete="off"><datalist id="ficha-theme-options">${allThemes().map(tag => `<option value="${esc(tag)}">`).join('')}</datalist><button type="button" class="secondary-button" data-action="ficha-add-tag">Adicionar</button></div><p class="field-error" id="ficha-tag-error" role="alert"></p></div><p class="field-error" id="ficha-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer ficha-edit-footer"><button class="primary-button" type="submit" form="source-entry-edit-form">${icon('check')} Salvar Alterações</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="ficha-delete">${icon('trash')} Excluir ficha</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'ficha-edit-sheet' + (draft.fromList ? ' ficha-list-sheet' : ''));
+  openSheet(draft.fromList ? (draft.identifier || `Ficha #${draft.number}`) : `Editar Ficha #${draft.number}`, draft.title || draft.reference || 'Reflexão da leitura', `<form id="source-entry-edit-form" class="sheet-scroll ficha-edit-form" novalidate>${draft.fromList ? fichaSourceFieldHTML() : ''}<div class="field"><label for="ficha-title">Título / Referência <span class="optional-label">(Opcional)</span></label><input id="ficha-title" name="title" value="${esc(draft.title)}" maxlength="200" aria-describedby="ficha-edit-error"></div><div class="ficha-edit-grid"><div class="field"><label for="ficha-reference">Capítulo / Cena / Pág.</label><input id="ficha-reference" name="reference" value="${esc(draft.reference)}" maxlength="160" placeholder="Capítulo, cena ou página"></div><div class="field"><label for="ficha-identifier">Identificador</label><input id="ficha-identifier" name="identifier" value="${esc(draft.identifier)}" placeholder="Ficha #${draft.number}" maxlength="40"></div></div><div class="field"><label for="ficha-quote">Trecho citado da obra</label><div class="ficha-quote-field"><textarea id="ficha-quote" name="quote" maxlength="5000" placeholder="Adicione o trecho citado…">${esc(draft.quote)}</textarea></div></div><div class="field"><label for="ficha-text">Reflexão <span aria-hidden="true">*</span></label><textarea id="ficha-text" name="text" maxlength="5000" required aria-describedby="ficha-edit-error">${esc(draft.text)}</textarea></div><div class="field"><div class="ficha-tags-heading"><label>Temas / Tags</label><span id="ficha-tag-count">${draft.tags.length} associados</span></div><div class="ficha-edit-tags" id="ficha-edit-tags">${sourceEntryTagsHTML()}<button class="ficha-new-tag" type="button" data-action="ficha-new-tag">${icon('plus')} Novo tema</button></div><div class="ficha-tag-composer" id="ficha-tag-composer" hidden><label class="sr-only" for="ficha-tag-input">Nome do tema</label><input id="ficha-tag-input" list="ficha-theme-options" maxlength="50" placeholder="Escolha ou digite um tema" autocomplete="off"><datalist id="ficha-theme-options">${allThemes().map(tag => `<option value="${esc(tag)}">`).join('')}</datalist><button type="button" class="secondary-button" data-action="ficha-add-tag">Adicionar</button></div><p class="field-error" id="ficha-tag-error" role="alert"></p></div><p class="field-error" id="ficha-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer ficha-edit-footer"><button class="primary-button" type="submit" form="source-entry-edit-form">${icon('check')} Salvar</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="ficha-delete">${icon('trash')} Excluir ficha</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'ficha-edit-sheet' + (draft.fromList ? ' ficha-list-sheet' : ''));
 }
 function syncSourceEntryDraft() {
   const form = document.querySelector('#source-entry-edit-form');
@@ -676,7 +678,7 @@ function openReflection(id) {
   if (route === 'fichas') { openSourceEntryEdit(id, true); return; }
   const r = reflections.find((record) => record.id === id);
   const b = bookFor(r.bookId);
-  openModal(r.title || 'Uma leitura, um pensamento', `<div class="modal-body"><button class="text-button" data-action="book" data-id="${b.id}">${esc(b.title)}</button><p class="detail-author">${esc(b.author)}${r.reference ? ` · ${esc(r.reference)}` : ''}</p>${r.quote ? `<blockquote class="entry-detail-quote">${esc(r.quote)}</blockquote>` : ''}<p class="long-reflection">${formatText(r.text)}</p><div class="chip-list">${r.tags.map((tag) => `<button class="chip" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><hr class="detail-divider"><p class="help">Ficha do seu arquivo pessoal · ${r.date ? esc(r.date.split('-').reverse().join('/')) : 'Hoje'}</p><div class="modal-actions"><button class="secondary-button" data-action="close-modal">Fechar</button><button class="primary-button" data-action="edit" data-id="${esc(r.id)}">${icon('write')} Editar reflexão</button></div></div>`, 'Reflexão');
+  openModal(r.title || 'Reflexão', `<div class="modal-body"><button class="text-button" data-action="book" data-id="${b.id}">${esc(b.title)}</button><p class="detail-author">${esc(b.author)}${r.reference ? ` · ${esc(r.reference)}` : ''}</p>${r.quote ? `<blockquote class="entry-detail-quote">${esc(r.quote)}</blockquote>` : ''}<p class="long-reflection">${formatText(r.text)}</p><div class="chip-list">${r.tags.map((tag) => `<button class="chip" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><p class="help">${r.date ? esc(r.date.split('-').reverse().join('/')) : 'Hoje'}</p><div class="modal-actions"><button class="secondary-button" data-action="close-modal">Fechar</button><button class="primary-button" data-action="edit" data-id="${esc(r.id)}">${icon('write')} Editar reflexão</button></div></div>`, 'Reflexão');
 }
 function openEditor(bookId = '', reflectionId = '', themeName = '') {
   const record = reflections.find((r) => r.id === reflectionId);
@@ -705,12 +707,12 @@ function entryTagsHTML() {
 }
 function editorHTML() {
   return `<form id="reflection-form" class="entry-form" data-id="${esc(editor.id)}" novalidate>
-    <div class="entry-savebar"><button class="icon-button entry-back" type="button" data-action="entry-back" aria-label="Voltar ao arquivo">${icon('back')}</button><span class="entry-save-status" role="status"><span class="status-dot"></span><span id="entry-save-label">${editor.text || editor.title ? 'Salvo automaticamente' : 'Rascunho vazio'}</span></span><button class="primary-button entry-save" type="submit">${icon('check')} Salvar</button></div>
-    <input class="entry-title" id="reflection-title" name="title" placeholder="Dê um título à sua ficha" aria-label="Título da ficha" maxlength="200" value="${esc(editor.title)}">
-    <section class="entry-metadata" aria-label="Obra, referência e temas"><div class="entry-source">${icon('book-open')}<select id="reflection-book" name="bookId" aria-label="Obra" required aria-describedby="reflection-error"><option value="">Selecionar fonte / obra *</option>${books.map((b) => `<option value="${b.id}" ${editor.bookId === b.id ? 'selected' : ''}>${esc(b.title)} — ${esc(b.author)}</option>`).join('')}</select></div><div class="entry-reference">${icon('book')}<input id="reflection-reference" name="reference" placeholder="Capítulo, página ou referência" aria-label="Referência na obra" maxlength="160" value="${esc(editor.reference)}"></div><div class="entry-tags" id="entry-tags">${entryTagsHTML()}</div><button type="button" class="entry-add-theme" data-action="add-entry-tag">${icon('plus')} Tema</button></section>
-    <section class="entry-quote"><div class="entry-section-header"><label for="reflection-quote">${icon('quote')} Trecho da obra</label><button type="button" class="entry-copy" data-action="copy-quote" aria-label="Copiar trecho da obra">${icon('copy')}</button></div><textarea id="reflection-quote" name="quote" placeholder="Adicione um trecho da obra…" aria-label="Trecho da obra" maxlength="5000">${esc(editor.quote)}</textarea></section>
-    <section class="entry-synthesis"><div class="entry-section-header"><label for="reflection-text">${icon('link')} Minha síntese &amp; reflexão <span aria-hidden="true">*</span></label><span class="entry-private">${icon('lock')} Privado</span></div><textarea id="reflection-text" name="text" placeholder="O que essa leitura despertou em você?" aria-label="Minha síntese e reflexão" required maxlength="5000" aria-describedby="reflection-error">${esc(editor.text)}</textarea></section>
-    <p class="field-error" id="reflection-error" role="alert"></p><div class="entry-formatbar" role="toolbar" aria-label="Formatação da reflexão"><button type="button" data-action="format-entry" data-format="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button><button type="button" data-action="format-entry" data-format="italic" aria-label="Itálico" title="Itálico"><em>I</em></button><span class="format-divider"></span><button type="button" data-action="format-entry" data-format="quote" aria-label="Citação" title="Citação">${icon('quote')}</button><button type="button" data-action="entry-help" aria-label="Inspiração para refletir" title="Inspiração para refletir">${icon('sparkle')}</button></div>
+    <div class="entry-savebar"><button class="icon-button entry-back" type="button" data-action="entry-back" aria-label="Voltar ao Bloom">${icon('back')}</button><span class="entry-save-status" role="status"><span class="status-dot"></span><span id="entry-save-label">${editor.text || editor.title ? 'Salvo automaticamente' : 'Rascunho vazio'}</span></span><button class="primary-button entry-save" type="submit">${icon('check')} Salvar</button></div>
+    <input class="entry-title" id="reflection-title" name="title" placeholder="Título (opcional)" aria-label="Título da ficha" maxlength="200" value="${esc(editor.title)}">
+    <section class="entry-metadata" aria-label="Obra, referência e temas"><div class="entry-source"><select id="reflection-book" name="bookId" aria-label="Obra" required aria-describedby="reflection-error"><option value="">Selecionar fonte *</option>${books.map((b) => `<option value="${b.id}" ${editor.bookId === b.id ? 'selected' : ''}>${esc(b.title)} — ${esc(b.author)}</option>`).join('')}</select></div><div class="entry-reference"><input id="reflection-reference" name="reference" placeholder="Capítulo, página ou referência" aria-label="Referência na obra" maxlength="160" value="${esc(editor.reference)}"></div><div class="entry-tags" id="entry-tags">${entryTagsHTML()}</div><button type="button" class="entry-add-theme" data-action="add-entry-tag">${icon('plus')} Tema</button></section>
+    <section class="entry-quote"><div class="entry-section-header"><label for="reflection-quote">${icon('quote')} Trecho da obra</label><button type="button" class="entry-copy" data-action="copy-quote" aria-label="Copiar trecho da obra">${icon('copy')}</button></div><textarea id="reflection-quote" name="quote" placeholder="" aria-label="Trecho da obra" maxlength="5000">${esc(editor.quote)}</textarea></section>
+    <section class="entry-synthesis"><div class="entry-section-header"><label for="reflection-text">${icon('link')} Reflexão <span aria-hidden="true">*</span></label></div><textarea id="reflection-text" name="text" placeholder="" aria-label="Minha síntese e reflexão" required maxlength="5000" aria-describedby="reflection-error">${esc(editor.text)}</textarea></section>
+    <p class="field-error" id="reflection-error" role="alert"></p><div class="entry-formatbar" role="toolbar" aria-label="Formatação da reflexão"><button type="button" data-action="format-entry" data-format="bold" aria-label="Negrito" title="Negrito"><strong>B</strong></button><button type="button" data-action="format-entry" data-format="italic" aria-label="Itálico" title="Itálico"><em>I</em></button><button type="button" data-action="format-entry" data-format="quote" aria-label="Citação" title="Citação">${icon('quote')}</button><button type="button" data-action="entry-help" aria-label="Inspiração para refletir" title="Inspiração para refletir">${icon('sparkle')}</button></div>
   </form>`;
 }
 function autosaveEntry() {
@@ -745,10 +747,10 @@ function openProfile() {
   </header>
   <form id="profile-name-form" class="profile-name-form" hidden novalidate><label class="field-label" for="profile-name">Nome do perfil</label><input id="profile-name" name="name" value="${esc(profileName)}" maxlength="80" autocomplete="nickname" required aria-describedby="profile-name-error"><p class="field-error" id="profile-name-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-action="profile-cancel-edit">Cancelar</button><button type="submit" class="primary-button">${icon('check')} Salvar nome</button></div></form>
   <div class="profile-stats"><div><strong>${books.length}</strong><small>obras</small></div><div><strong>${reflections.length}</strong><small>reflexões</small></div><div><strong>${allThemes().length}</strong><small>temas</small></div></div>
-  <p class="profile-note">Este é um perfil fictício. As reflexões que você criar ficam salvas apenas neste navegador.</p>
-  <section class="profile-data" aria-labelledby="profile-data-title"><h3 id="profile-data-title">Dados do Arquivo</h3><div class="profile-data-actions"><button class="secondary-button" data-action="export-archive">${icon('download')} Exportar JSON</button><button class="secondary-button" data-action="import-archive">${icon('upload')} Importar JSON</button></div><input type="file" id="archive-import-file" accept=".json,application/json" hidden><p id="archive-import-error" class="field-error" role="alert"></p><div class="profile-import-preview" id="archive-import-preview" hidden><p id="archive-import-summary"></p><p>A importação substitui as fontes, fichas e temas atuais pelos dados deste arquivo.</p><div class="modal-actions"><button class="secondary-button" data-action="cancel-archive-import">Cancelar</button><button class="primary-button" data-action="confirm-archive-import">Importar arquivo</button></div></div></section>
-  <hr class="detail-divider">
-  <button class="secondary-button profile-logout" data-action="logout">${icon('logout')} Sair do Arquivo</button>`;
+  <p class="profile-note">Dados salvos neste navegador.</p>
+  <section class="profile-data" aria-labelledby="profile-data-title"><h3 id="profile-data-title">Dados do Bloom</h3><div class="profile-data-actions"><button class="secondary-button" data-action="export-archive">${icon('download')} Exportar JSON</button><button class="secondary-button" data-action="import-archive">${icon('upload')} Importar JSON</button></div><input type="file" id="archive-import-file" accept=".json,application/json" hidden><p id="archive-import-error" class="field-error" role="alert"></p><div class="profile-import-preview" id="archive-import-preview" hidden><p id="archive-import-summary"></p><p>A importação substitui as fontes, fichas e temas atuais pelos dados deste arquivo.</p><div class="modal-actions"><button class="secondary-button" data-action="cancel-archive-import">Cancelar</button><button class="primary-button" data-action="confirm-archive-import">Importar arquivo</button></div></div></section>
+
+  <button class="secondary-button profile-logout" data-action="logout">${icon('logout')} Sair do Bloom</button>`;
   showDialog(content, 'profile-modal');
 }
 function closeProfileNameEditor() {
@@ -762,7 +764,7 @@ function exportArchive() {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `arquivo-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `bloom-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast('Arquivo exportado em JSON.');
@@ -873,8 +875,8 @@ document.addEventListener('click', (event) => {
     else { if (action === 'menu-create-source') openNewSource(); else openNewTheme(); opener = summary; }
   } else if (action === 'clear-entry-search') { entryQuery = ''; document.querySelector('#entry-search').value = ''; refreshEntries(); document.querySelector('#entry-search').focus(); }
   else if (action === 'google') {
-    openModal('Continuar com o Google', `<div class="modal-body"><p class="modal-description">Escolha o perfil de demonstração para explorar o arquivo.</p><div class="profile-summary"><div class="profile-avatar">${icon('user')}</div><div><strong>Leitor do Arquivo</strong><small>leitor@exemplo.com</small></div></div><button class="primary-button" data-action="google-enter">Entrar com este perfil ${icon('arrow')}</button><p class="help">Login simulado para este protótipo.</p></div>`);
-  } else if (action === 'google-enter') { activateAccount(accountFor('leitor@exemplo.com')); modal.close(); go('inicio'); toast('Bem-vindo ao seu Arquivo.'); }
+    openModal('Continuar com o Google', `<div class="modal-body"><p class="modal-description">Escolha o perfil de demonstração para explorar o Bloom.</p><div class="profile-summary"><div class="profile-avatar">${icon('user')}</div><div><strong>Leitor Bloom</strong><small>leitor@exemplo.com</small></div></div><button class="primary-button" data-action="google-enter">Entrar com este perfil ${icon('arrow')}</button><p class="help">Login simulado para este protótipo.</p></div>`);
+  } else if (action === 'google-enter') { activateAccount(accountFor('leitor@exemplo.com')); modal.close(); go('inicio'); toast('Bem-vindo ao Bloom.'); }
   else if (action === 'back-login') go('login');
   else if (action === 'fill-code') { document.querySelectorAll('.otp-digit').forEach((el, i) => { el.value = DEMO_CODE[i]; el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); }); document.querySelector('#code-error').textContent = ''; document.querySelector('#code-form [type="submit"]').focus(); }
   else if (action === 'resend') { startCountdown(); toast('Novo código de demonstração: 482619.'); }
@@ -902,7 +904,7 @@ document.addEventListener('click', (event) => {
     const persisted = storage.set('arquivo-reflections-v1', reflections);
     const draft = storage.get('arquivo-entry-draft-v2', null);
     if (draft?.id === sourceEntryDraft.id) { editor = null; storage.set('arquivo-entry-draft-v2', null); }
-    finishSourceEntryChange('Ficha excluída do seu Arquivo.', persisted);
+    finishSourceEntryChange('Ficha excluída do Bloom.', persisted);
   }
   else if (action === 'source-filter') { sourceTheme = button.dataset.tag; refreshSourceEntries(); }
   else if (action === 'source-toggle-search') {
@@ -933,7 +935,7 @@ document.addEventListener('click', (event) => {
     go(editorReturn);
   }
   else if (action === 'add-entry-tag') {
-    openModal('Adicionar tema', `<form class="modal-body" id="entry-theme-form" novalidate><label class="field-label" for="entry-theme-input">Nome do tema</label><input id="entry-theme-input" name="tag" placeholder="Digite um tema" list="entry-theme-options" autocomplete="off" maxlength="50" required><datalist id="entry-theme-options">${allThemes().map(tag => `<option value="${esc(tag)}">`).join('')}</datalist><p class="help">Escolha um tema existente ou crie uma nova conexão.</p><p class="field-error" id="entry-theme-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-action="close-modal">Cancelar</button><button type="submit" class="primary-button">Adicionar tema</button></div></form>`);
+    openModal('Adicionar tema', `<form class="modal-body" id="entry-theme-form" novalidate><label class="field-label" for="entry-theme-input">Nome do tema</label><input id="entry-theme-input" name="tag" placeholder="Digite um tema" list="entry-theme-options" autocomplete="off" maxlength="50" required><datalist id="entry-theme-options">${allThemes().map(tag => `<option value="${esc(tag)}">`).join('')}</datalist><p class="field-error" id="entry-theme-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-action="close-modal">Cancelar</button><button type="submit" class="primary-button">Adicionar tema</button></div></form>`);
     document.querySelector('#entry-theme-input').focus();
   }
   else if (action === 'remove-entry-tag') { editor.tags.splice(Number(button.dataset.index), 1); document.querySelector('#entry-tags').innerHTML = entryTagsHTML(); autosaveEntry(); document.querySelector('.entry-add-theme').focus({ preventScroll: true }); }
@@ -1077,7 +1079,7 @@ function saveSourceEntry(form) {
   const persisted = storage.set('arquivo-reflections-v1', reflections);
   const draft = storage.get('arquivo-entry-draft-v2', null);
   if (draft?.id === record.id) { editor = null; storage.set('arquivo-entry-draft-v2', null); }
-  finishSourceEntryChange('Ficha atualizada no seu Arquivo.', persisted);
+  finishSourceEntryChange('Ficha atualizada no Bloom.', persisted);
 }
 
 function saveSourceChanges(form) {
@@ -1085,11 +1087,11 @@ function saveSourceChanges(form) {
   const author = form.elements.author.value.trim();
   const bibliography = form.elements.bibliography.value.trim();
   if (!title || !author) { const field = !title ? form.elements.title : form.elements.author; document.querySelector('#source-edit-error').textContent = !title ? 'Informe o título da obra.' : 'Informe o nome do autor.'; field.setAttribute('aria-invalid', 'true'); field.focus(); return; }
-  if (books.some(b => b.id !== selectedSource && normalize(b.title) === normalize(title) && normalize(b.author) === normalize(author))) { document.querySelector('#source-edit-error').textContent = 'Esta obra e autor já estão no seu arquivo.'; form.elements.title.setAttribute('aria-invalid', 'true'); form.elements.title.focus(); return; }
+  if (books.some(b => b.id !== selectedSource && normalize(b.title) === normalize(title) && normalize(b.author) === normalize(author))) { document.querySelector('#source-edit-error').textContent = 'Esta obra e autor já estão no Bloom.'; form.elements.title.setAttribute('aria-invalid', 'true'); form.elements.title.focus(); return; }
   books = books.map(b => b.id === selectedSource ? { ...b, title, author, bibliography } : b);
   const persisted = persistSources();
   go('fonte/' + encodeURIComponent(selectedSource));
-  toast(persisted ? 'Fonte atualizada no seu Arquivo.' : 'Fonte atualizada nesta sessão.');
+  toast(persisted ? 'Fonte atualizada no Bloom.' : 'Fonte atualizada nesta sessão.');
 }
 
 function saveThemeChanges(form) {
@@ -1098,7 +1100,7 @@ function saveThemeChanges(form) {
   const name = form.elements.name.value.trim().replace(/^#/, '').trim().replace(/\s+/g, ' ');
   const description = form.elements.description.value.trim();
   if (!name || name.length > 40) { document.querySelector('#theme-edit-error').textContent = !name ? 'Informe o nome do tema.' : 'Use até 40 caracteres para o nome.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
-  if (themeCatalog().some(t => normalize(t.name) !== normalize(theme.name) && normalize(t.name) === normalize(name))) { document.querySelector('#theme-edit-error').textContent = 'Este tema já existe no seu arquivo.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
+  if (themeCatalog().some(t => normalize(t.name) !== normalize(theme.name) && normalize(t.name) === normalize(name))) { document.querySelector('#theme-edit-error').textContent = 'Este tema já existe no Bloom.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
   customThemes = customThemes.filter(t => normalize(t.name) !== normalize(theme.name));
   customThemes.unshift({ name, description, originalName: theme.originalName || '', addedAt: theme.addedAt || Date.now() });
   // A newly named theme can reuse the name of a previously removed seed.
@@ -1107,19 +1109,19 @@ function saveThemeChanges(form) {
   storage.set('arquivo-deleted-themes-v1', deletedThemes);
   const persisted = persistThemeChange(theme.name, name);
   openTheme(name);
-  toast(persisted ? 'Tema atualizado no seu Arquivo.' : 'Tema atualizado nesta sessão.');
+  toast(persisted ? 'Tema atualizado no Bloom.' : 'Tema atualizado nesta sessão.');
 }
 
 function createTheme(form) {
   const name = form.elements.name.value.trim().replace(/^#/, '').trim().replace(/\s+/g, ' ');
   const description = form.elements.description.value.trim();
   if (!name || name.length > 40) { document.querySelector('#theme-error').textContent = !name ? 'Informe o nome do tema.' : 'Use até 40 caracteres para o nome.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
-  if (allThemes().some(t => normalize(t) === normalize(name))) { document.querySelector('#theme-error').textContent = 'Este tema já existe no seu arquivo.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
+  if (allThemes().some(t => normalize(t) === normalize(name))) { document.querySelector('#theme-error').textContent = 'Este tema já existe no Bloom.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
   customThemes.unshift({ name, description, addedAt: Date.now() });
   const persisted = storage.set('arquivo-themes-v1', customThemes);
   newThemeDraft = { name: '', description: '' }; themeQuery = ''; themeSort = 'recentes';
   go('temas');
-  toast(persisted ? 'Novo tema adicionado ao seu Arquivo.' : 'Tema adicionado nesta sessão. Armazenamento local indisponível.');
+  toast(persisted ? 'Novo tema adicionado ao Bloom.' : 'Tema adicionado nesta sessão. Armazenamento local indisponível.');
 }
 
 function createSource(form) {
@@ -1128,14 +1130,14 @@ function createSource(form) {
   const bibliography = form.elements.bibliography.value.trim();
   const immediate = form.elements.immediate.checked;
   if (!title || !author) { const field = !title ? form.elements.title : form.elements.author; document.querySelector('#source-error').textContent = !title ? 'Informe o título da obra.' : 'Informe o nome do autor.'; field.setAttribute('aria-invalid', 'true'); field.focus(); return; }
-  if (books.some(b => normalize(b.title) === normalize(title) && normalize(b.author) === normalize(author))) { document.querySelector('#source-error').textContent = 'Esta obra e autor já estão no seu arquivo.'; form.elements.title.setAttribute('aria-invalid', 'true'); form.elements.title.focus(); return; }
+  if (books.some(b => normalize(b.title) === normalize(title) && normalize(b.author) === normalize(author))) { document.querySelector('#source-error').textContent = 'Esta obra e autor já estão no Bloom.'; form.elements.title.setAttribute('aria-invalid', 'true'); form.elements.title.focus(); return; }
   const source = { id: `source-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title, author, year: '', bibliography, description: '', color: '#343126', addedAt: Date.now() };
   books.unshift(source);
   const persisted = persistSources();
   newSourceDraft = blankSource(); sourceQuery = ''; sourceSort = 'recentes';
   if (immediate) openEditor(source.id);
   else go('obras');
-  toast(persisted ? 'Nova fonte adicionada ao seu Arquivo.' : 'Fonte adicionada nesta sessão. Armazenamento local indisponível.');
+  toast(persisted ? 'Nova fonte adicionada ao Bloom.' : 'Fonte adicionada nesta sessão. Armazenamento local indisponível.');
 }
 
 function associateEntryTheme(form) {
@@ -1177,7 +1179,7 @@ function confirmAccessCode(form) {
   if (code !== DEMO_CODE) { document.querySelector('#code-error').textContent = code.length < 6 ? 'Preencha os 6 dígitos do código.' : 'Código incorreto. Neste protótipo, use 482619.'; inputs.forEach((el) => { el.classList.add('invalid'); el.setAttribute('aria-invalid', 'true'); }); (inputs.find((el) => !el.value) || inputs[0]).focus(); return; }
   const button = form.querySelector('[type="submit"]');
   button.disabled = true;
-  button.textContent = 'Abrindo seu Arquivo…';
+  button.textContent = 'Abrindo Bloom…';
   authTimer = setTimeout(() => {
     const firstAccess = pendingAccess?.isNew;
     if (pendingAccess) {
@@ -1186,7 +1188,7 @@ function confirmAccessCode(form) {
       storage.set('arquivo-accounts-v1', accounts);
       activateAccount(account);
     }
-    go('inicio'); toast(firstAccess ? 'Conta criada. Bem-vindo ao seu Arquivo.' : 'Bem-vindo ao seu Arquivo.');
+    go('inicio'); toast(firstAccess ? 'Conta criada. Bem-vindo ao Bloom.' : 'Bem-vindo ao Bloom.');
   }, 500);
 }
 
@@ -1215,7 +1217,7 @@ function saveEntry(form) {
     if (context.bookId) pendingSourceSheet = { theme: context.theme, bookId: record.bookId };
     openTheme(context.theme);
   } else go(editorReturn === 'fichas' ? 'fichas' : 'inicio');
-  toast(persisted ? (editing ? 'Reflexão atualizada no seu Arquivo.' : 'Uma nova reflexão no seu Arquivo.') : 'Reflexão salva nesta sessão. Armazenamento local indisponível.');
+  toast(persisted ? (editing ? 'Reflexão atualizada no Bloom.' : 'Uma nova reflexão no Bloom.') : 'Reflexão salva nesta sessão. Armazenamento local indisponível.');
 }
 
 const formHandlers = {
