@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b0c0e">
+    <meta name="description" content="Arquivo — onde leituras amadurecem em pensamento. Protótipo interativo de um arquivo de leituras e reflexões.">
+    <title>Arquivo · Leituras e reflexões</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="prototype-header">
+      <a class="brand" href="#login" aria-label="Arquivo, voltar ao acesso"><span data-icon="book-open"></span><span>arquivo<span class="brand-period">.</span></span></a>
+      <span class="prototype-badge"><span class="status-dot"></span> Protótipo interativo</span>
+    </header>
+    <nav class="flow-nav" aria-label="Explorar as três telas do protótipo">
+      <a href="#login" data-step="login"><span>01</span> Acesso</a>
+      <span class="flow-line"></span>
+      <a href="#codigo" data-step="codigo"><span>02</span> Verificação</a>
+      <span class="flow-line"></span>
+      <a href="#inicio" data-step="inicio"><span>03</span> Arquivo</a>
+    </nav>
+    <main id="app" tabindex="-1"></main>
+    <footer class="prototype-footer">Um lugar para o que fica depois da última página.</footer>
+    <dialog id="modal" aria-labelledby="modal-title"></dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
