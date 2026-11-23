@@ -159,7 +159,7 @@ button.chip:hover { border-color: #d4af3766; color: var(--gold); }
 .reflection-text { color: var(--text); font-size: 16px; line-height: 26px; letter-spacing: .01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .reflection-tags { display: block; margin-top: 20px; color: var(--warm); font-size: 11px; line-height: 20px; letter-spacing: .04em; }
 .archive-nav-dock { position: sticky; bottom: 0; z-index: 3; }
-.archive-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 10px 8px max(10px, env(safe-area-inset-bottom)); background: var(--surface); z-index: 2; }
+.archive-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; padding: 10px 8px max(10px, env(safe-area-inset-bottom)); background: var(--surface); z-index: 2; }
 .archive-nav a, .nav-create { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; color: var(--muted); font-size: 11px; letter-spacing: .025em; min-width: 0; min-height: 48px; }
 .archive-nav a:hover, .archive-nav a[aria-current], .nav-create:hover, .nav-create.active { color: var(--gold); }
 .archive-nav svg { width: 20px; height: 20px; }
@@ -197,7 +197,7 @@ button.chip:hover { border-color: #d4af3766; color: var(--gold); }
 .book-tile h2 { font-size: 20px; line-height: 26px; }
 .book-tile .work-author { margin-top: 8px; }
 .book-count { display: block; margin-top: 12px; color: var(--gold); font-size: 11px; }
-:is(.sources-screen, .themes-screen, .entries-screen) .archive-header { padding: 16px; margin-bottom: 16px; }
+:is(.sources-screen, .themes-screen, .entries-screen, .vocabulary-screen) .archive-header { padding: 16px; margin-bottom: 16px; }
 .sources-heading { display: flex; align-items: center; gap: 9px; }
 .sources-heading-icon { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #d4af3726; border-radius: 6px; background: #d4af3712; color: var(--gold); }
 .sources-heading-icon svg { width: 17px; height: 17px; transform: rotate(-12deg); }
@@ -228,7 +228,19 @@ button.chip:hover { border-color: #d4af3766; color: var(--gold); }
 .source-stats { flex-shrink: 0; color: #99907c; }
 .meta-dot { color: #99907c; margin: 0 2px; }
 .source-row > svg { width: 17px; height: 17px; flex-shrink: 0; color: #99907c; }
-:is(.sources-screen, .themes-screen, .entries-screen) .archive-nav { padding-top: 8px; }
+:is(.sources-screen, .themes-screen, .entries-screen, .vocabulary-screen) .archive-nav { padding-top: 8px; }
+.word-card-synonyms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.word-card-synonyms span { font-size: 10px; line-height: 16px; color: var(--warm); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; letter-spacing: .02em; }
+.word-synonyms-block { margin: 24px 0 8px; }
+.word-synonyms-block h3 { display: inline-flex; align-items: center; gap: 8px; font: 500 11px/16px var(--sans); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 12px; }
+.word-synonyms-block h3 svg { width: 14px; height: 14px; }
+.word-detail .word-definition { margin-top: 20px; }
+.empty-state .empty-cta { margin-top: 18px; min-height: 44px; }
+.vocabulary-screen #vocabulary-sort { width: 88px; }
+.new-word-screen .archive-header { padding: 16px 16px 20px; }
+.new-word-screen .archive-content { padding: 0 16px 38px; }
+.new-word-screen .archive-body { min-height: 690px; }
+.word-detail-screen .archive-body { min-height: 780px; }
 
 .optional-label { color: var(--muted); font-size: 11px; }
 @media (max-width: 360px) {
@@ -586,7 +598,7 @@ dialog::backdrop { background: #000a; }
 .profile-avatar { width: 48px; height: 48px; background: #d4af3718; color: var(--gold); border: 1px solid #d4af3733; border-radius: 50%; display: grid; place-items: center; }
 .profile-summary strong { display: block; font-weight: 500; font-size: 16px; }
 .profile-summary small { color: var(--muted); overflow-wrap: anywhere; }
-.profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 0; border-radius: 0; padding: 16px; text-align: center; margin-bottom: 24px; }
+.profile-stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 0; border-radius: 0; padding: 16px; text-align: center; margin-bottom: 24px; }
 .profile-stats strong { display: block; color: var(--gold); font: 500 26px/32px var(--serif); }
 .profile-stats small { font-size: 11px; color: var(--muted); }
 .profile-logout { width: 100%; }
@@ -722,7 +734,7 @@ body[data-view="auth"] .prototype-header { margin-bottom: 32px; }
 body[data-view="archive"] .preview-link { display: none; }
 body[data-view="archive"] .archive-profile { display: grid; }
 body { padding-bottom: 24px; }
-.archive-screen:is(.home-screen, .sources-screen, .themes-screen, .entries-screen, .theme-detail-screen, .source-detail-screen) .archive-content { padding-top: 28px; }
+.archive-screen:is(.home-screen, .sources-screen, .themes-screen, .entries-screen, .vocabulary-screen, .theme-detail-screen, .source-detail-screen, .word-detail-screen) .archive-content { padding-top: 28px; }
 .action-row { gap: 10px; margin-bottom: 34px; }
 .search-wrap input { background: transparent; min-height: 44px; font-size: 13px; }
 .search-wrap > svg { width: 17px; height: 17px; top: 14px; }
@@ -776,9 +788,9 @@ body { padding-bottom: 24px; }
 .nav-create-icon { border-color: #c6a66c44; background: #c6a66c14; color: var(--gold); }
 .create-menu-panel { border-color: #494133; background: var(--canvas); }
 .create-menu-panel > button { min-height: 56px; }
-:is(.sources-screen, .themes-screen, .entries-screen) .archive-header { margin-bottom: 0; padding: 22px 24px 18px; }
-:is(.sources-screen, .themes-screen, .entries-screen) .sources-heading { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-:is(.sources-screen, .themes-screen, .entries-screen) .archive-header { justify-content: flex-end; }
+:is(.sources-screen, .themes-screen, .entries-screen, .vocabulary-screen) .archive-header { margin-bottom: 0; padding: 22px 24px 18px; }
+:is(.sources-screen, .themes-screen, .entries-screen, .vocabulary-screen) .sources-heading { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:is(.sources-screen, .themes-screen, .entries-screen, .vocabulary-screen) .archive-header { justify-content: flex-end; }
 .sources-search input { min-height: 44px; background: transparent; font-size: 13px; }
 .sources-controls { margin: 16px 0 24px; }
 .sources-count { font-size: 12px; color: var(--muted); }

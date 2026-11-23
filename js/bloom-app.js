@@ -51,9 +51,28 @@ const fieldErrorIds = { email: 'email-error', 'signup-name': 'signup-name-error'
 };
 const formErrorIds = {
   'theme-form': 'theme-error', 'theme-edit-form': 'theme-edit-error',
+  'vocabulary-form': 'vocabulary-error', 'vocabulary-edit-form': 'vocabulary-edit-error',
   'source-form': 'source-error', 'source-edit-form': 'source-edit-error',
   'source-entry-edit-form': 'ficha-edit-error', 'reflection-form': 'reflection-error',
 };
+function parseSynonyms(value) {
+  if (typeof value !== 'string' || !value.trim()) return [];
+  const seen = new Set();
+  return value.split(/[,;\n]+/).map(part => part.trim()).filter(part => {
+    if (!part) return false;
+    const key = normalize(part);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function synonymsLineHTML(value) {
+  const items = parseSynonyms(value);
+  if (!items.length) return '';
+  return `<span class="word-card-synonyms">${items.map(item => `<span>${esc(item)}</span>`).join('')}</span>`;
+}
+const wordFor = (id) => state.vocabulary.find(w => w.id === id);
+function persistVocabulary() { return storage.set('arquivo-vocabulary-v1', state.vocabulary); }
 function showDialog(content, className = '') {
   state.opener = document.activeElement;
   modal.className = className;
@@ -119,8 +138,8 @@ function activateAccount(account) {
   state.loginDraft = { email: state.email, name: '', username: '' };
 }
 function navHTML() {
-  const link = (id, glyph, title) => `<a href="#${id}" data-action="nav-route" data-route="${id}" ${(state.route === id || (['tema', 'novo-tema'].includes(state.route) && id === 'temas') || (state.route === 'fonte' && id === 'obras')) ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${title}</span></a>`;
-  return `<div class="archive-nav-dock"><nav class="archive-nav" aria-label="Navegação principal">${link('inicio', 'archive', 'Início')}${link('fichas', 'copy', 'Fichas')}<details class="create-menu"><summary class="nav-create ${['criar', 'nova-fonte'].includes(state.route) ? 'active' : ''}" aria-label="Criar"><span class="nav-create-icon">${icon('write')}</span><span>Criar</span></summary><div class="create-menu-panel"><button data-action="menu-create-entry"><span class="create-option-icon">${icon('write')}</span><span><strong>Nova ficha</strong></span>${icon('chevron')}</button><button data-action="menu-create-source"><span class="create-option-icon">${icon('book')}</span><span><strong>Nova fonte</strong></span>${icon('chevron')}</button><button data-action="menu-create-theme"><span class="create-option-icon">${icon('themes')}</span><span><strong>Novo tema</strong></span>${icon('chevron')}</button></div></details>${link('obras', 'book', 'Fontes')}${link('temas', 'themes', 'Temas')}</nav></div>`;
+  const link = (id, glyph, title) => `<a href="#${id}" data-action="nav-route" data-route="${id}" ${(state.route === id || (['tema', 'novo-tema'].includes(state.route) && id === 'temas') || (['palavra', 'nova-palavra'].includes(state.route) && id === 'palavras') || (state.route === 'fonte' && id === 'obras')) ? 'aria-current="page"' : ''}>${icon(glyph)}<span>${title}</span></a>`;
+  return `<div class="archive-nav-dock"><nav class="archive-nav" aria-label="Navegação principal">${link('inicio', 'archive', 'Início')}${link('fichas', 'copy', 'Fichas')}<details class="create-menu"><summary class="nav-create ${['criar', 'nova-fonte', 'nova-palavra'].includes(state.route) ? 'active' : ''}" aria-label="Criar"><span class="nav-create-icon">${icon('write')}</span><span>Criar</span></summary><div class="create-menu-panel"><button data-action="menu-create-entry"><span class="create-option-icon">${icon('write')}</span><span><strong>Nova ficha</strong></span>${icon('chevron')}</button><button data-action="menu-create-source"><span class="create-option-icon">${icon('book')}</span><span><strong>Nova fonte</strong></span>${icon('chevron')}</button><button data-action="menu-create-theme"><span class="create-option-icon">${icon('themes')}</span><span><strong>Novo tema</strong></span>${icon('chevron')}</button><button data-action="menu-create-word"><span class="create-option-icon">${icon('type')}</span><span><strong>Nova palavra</strong></span>${icon('chevron')}</button></div></details>${link('obras', 'book', 'Fontes')}${link('temas', 'themes', 'Temas')}${link('palavras', 'type', 'Palavras')}</nav></div>`;
 }
 function workRow(book) {
   return `<button class="work-row" data-action="book" data-id="${book.id}"><span class="work-cover" style="--book-color:${book.color}">${icon('book-open')}</span><span class="work-info"><span class="work-title">${esc(book.title)}</span><span class="work-author">${esc(book.author)}</span><span class="work-count">${countLabel(countFor(book.id), 'ficha', 'fichas')}</span></span>${icon('arrow')}</button>`;
@@ -298,6 +317,105 @@ function deleteSelectedTheme() {
   state.themeQuery = ''; go('temas');
   toast(persisted && deletedSaved ? 'Tema excluído. Suas fichas foram preservadas.' : 'Tema excluído nesta sessão.');
 }
+function matchingWords() {
+  const q = normalize(state.vocabularyQuery.trim());
+  return state.vocabulary.filter(w => normalize([w.word, w.synonyms, w.description].join(' ')).includes(q)).sort((a, b) => state.vocabularySort === 'nome' ? a.word.localeCompare(b.word, 'pt-BR') : (b.updatedAt || b.addedAt || 0) - (a.updatedAt || a.addedAt || 0));
+}
+function vocabularyResultsHTML() {
+  const matches = matchingWords();
+  if (matches.length) {
+    return `<div class="theme-list">${matches.map(w => `<button class="theme-card" data-action="word-details" data-id="${esc(w.id)}" aria-label="Abrir palavra: ${esc(w.word)}"><span class="theme-card-heading"><span class="theme-dot"></span><span class="theme-card-title">${esc(w.word)}</span>${icon('arrow')}</span>${w.description ? `<span class="theme-card-description">${esc(w.description)}</span>` : ''}${synonymsLineHTML(w.synonyms)}</button>`).join('')}</div>`;
+  }
+  if (state.vocabulary.length) return emptyHTML('Nenhuma palavra encontrada', 'Experimente outro termo, sinônimo ou definição.');
+  return `<div class="empty-state">${icon('type')}<h3>Seu vocabulário começa aqui</h3><p>Registre palavras aprendidas com definição e sinônimos opcionais.</p><button class="primary-button empty-cta" data-action="new-word">${icon('plus')} Nova palavra</button></div>`;
+}
+function wordsHTML() {
+  const search = searchFieldHTML({
+    id: 'vocabulary-search', placeholder: 'Buscar palavras…', label: 'Buscar por palavra, sinônimo ou definição',
+    value: state.vocabularyQuery, clearAction: 'clear-vocabulary-search', clearLabel: 'Limpar busca de palavras',
+    className: 'sources-search vocabulary-search search-wrap',
+  });
+  const controls = listControlsHTML({
+    count: matchingWords().length, countId: 'vocabulary-count', singular: 'palavra', plural: 'palavras',
+    createAction: 'new-word', createLabel: 'Nova Palavra', className: 'sources-controls vocabulary-controls',
+    sort: { id: 'vocabulary-sort', label: 'Ordenar palavras', value: state.vocabularySort,
+      options: [['recentes', 'Recentes'], ['nome', 'Nome A–Z']] },
+  });
+  return `${search}${controls}<div id="vocabulary-results" aria-live="polite">${vocabularyResultsHTML()}</div>`;
+}
+function refreshWords() {
+  const results = document.querySelector('#vocabulary-results');
+  if (!results) return;
+  results.innerHTML = vocabularyResultsHTML();
+  document.querySelector('#vocabulary-count').textContent = countLabel(matchingWords().length, 'palavra', 'palavras');
+  document.querySelector('.vocabulary-search .clear-search').hidden = !state.vocabularyQuery;
+}
+function openWord(id) {
+  const word = wordFor(id);
+  if (!word) return;
+  go('palavra/' + encodeURIComponent(word.id));
+}
+function wordDetailHTML() {
+  const word = wordFor(state.selectedWord);
+  if (!word) return '';
+  const synonyms = parseSynonyms(word.synonyms);
+  return `<div class="theme-detail word-detail"><button class="theme-back text-button" data-action="word-back">${icon('back')} Todas as palavras</button><div class="theme-title-row"><h2>${esc(word.word)}</h2><button class="icon-button" data-action="edit-word" aria-label="Editar palavra">${icon('pencil')}</button></div>${synonyms.length ? `<section class="word-synonyms-block"><h3>${icon('link')} Sinônimos</h3><div class="chip-list">${synonyms.map(item => `<span class="chip">${esc(item)}</span>`).join('')}</div></section>` : ''}${word.description ? `<p class="theme-definition word-definition">“${esc(word.description)}”</p>` : (!synonyms.length ? emptyHTML('Detalhes opcionais', 'Adicione uma definição ou sinônimos quando quiser enriquecer esta entrada.') : '')}</div>`;
+}
+function openWordEdit() {
+  const word = wordFor(state.selectedWord);
+  if (!word) return;
+  openSheet('Editar palavra', word.word, `<form id="vocabulary-edit-form" class="sheet-scroll theme-edit-form" novalidate><div class="field"><div class="theme-field-label"><label for="edit-vocabulary-word">Palavra <span>(Obrigatório)</span></label><output id="vocabulary-word-count" for="edit-vocabulary-word">${word.word.length}/80</output></div><input id="edit-vocabulary-word" name="word" value="${esc(word.word)}" maxlength="80" required aria-describedby="vocabulary-edit-error"></div><div class="field"><div class="theme-field-label"><label for="edit-vocabulary-synonyms">Sinônimos <span class="optional-label">(Opcional)</span></label><output id="vocabulary-synonyms-count" for="edit-vocabulary-synonyms">${word.synonyms.length}/280</output></div><textarea id="edit-vocabulary-synonyms" name="synonyms" placeholder="Separe por vírgula ou linha" maxlength="280">${esc(word.synonyms)}</textarea></div><div class="field"><div class="theme-field-label"><label for="edit-vocabulary-description">Definição <span class="optional-label">(Opcional)</span></label><output id="vocabulary-description-count" for="edit-vocabulary-description">${word.description.length}/500</output></div><textarea id="edit-vocabulary-description" name="description" maxlength="500">${esc(word.description)}</textarea></div><p class="field-error" id="vocabulary-edit-error" role="alert"></p></form>`, `<footer class="sheet-footer edit-theme-footer"><button class="primary-button" type="submit" form="vocabulary-edit-form">${icon('check')} Salvar</button><div class="theme-edit-secondary"><button class="delete-theme-button" data-action="delete-word">${icon('trash')} Excluir palavra</button><button class="text-button" data-action="close-modal">Cancelar</button></div></footer>`, 'edit-word-sheet');
+}
+function confirmWordDelete() {
+  const word = wordFor(state.selectedWord);
+  if (!word) return;
+  openSheet('Excluir palavra?', word.word, `<div class="sheet-scroll delete-theme-description"><p>A palavra será removida do seu vocabulário. Esta ação não afeta fichas, fontes ou temas.</p></div>`, `<footer class="sheet-footer"><button class="secondary-button delete-theme-button" data-action="confirm-delete-word">${icon('trash')} Excluir palavra</button><button class="sheet-dismiss" data-action="edit-word">Cancelar</button></footer>`, 'delete-word-sheet');
+}
+function deleteSelectedWord() {
+  const id = state.selectedWord;
+  if (!wordFor(id)) return;
+  state.vocabulary = state.vocabulary.filter(w => w.id !== id);
+  const persisted = persistVocabulary();
+  state.vocabularyQuery = '';
+  go('palavras');
+  toast(persisted ? 'Palavra excluída do vocabulário.' : 'Palavra excluída nesta sessão.');
+}
+function openNewWord() {
+  state.newWordReturn = state.route === 'nova-palavra' ? 'palavras' : location.hash.slice(1) || 'palavras';
+  state.newWordDraft = { word: '', synonyms: '', description: '' };
+  go('nova-palavra');
+}
+function newWordHTML() {
+  return `<form class="new-theme-form" id="vocabulary-form" novalidate><section class="new-theme-field"><div class="new-theme-label"><label for="vocabulary-word">Palavra <span aria-hidden="true">◆</span><span class="sr-only"> (obrigatório)</span></label><output id="new-vocabulary-word-count" for="vocabulary-word">${state.newWordDraft.word.length}/80</output></div><input id="vocabulary-word" name="word" placeholder="Ex.: melancolia" maxlength="80" value="${esc(state.newWordDraft.word)}" required aria-describedby="vocabulary-error"></section><section class="new-theme-field"><div class="new-theme-label"><label for="vocabulary-synonyms">Sinônimos</label><output id="new-vocabulary-synonyms-count" for="vocabulary-synonyms">${state.newWordDraft.synonyms.length}/280</output></div><textarea id="vocabulary-synonyms" name="synonyms" placeholder="Opcional — ex.: tristeza, nostalgia" maxlength="280">${esc(state.newWordDraft.synonyms)}</textarea><p class="new-theme-help">Separe sinônimos por vírgula ou quebra de linha.</p></section><section class="new-theme-field"><div class="new-theme-label"><label for="vocabulary-description">Definição</label><output id="new-vocabulary-description-count" for="vocabulary-description">${state.newWordDraft.description.length}/500</output></div><textarea id="vocabulary-description" name="description" placeholder="Opcional — o que esta palavra significa para você" maxlength="500">${esc(state.newWordDraft.description)}</textarea></section><p class="field-error" id="vocabulary-error" role="alert"></p><button type="submit" class="primary-button new-theme-save">${icon('check')} Salvar palavra</button></form>`;
+}
+function createWord(form) {
+  const word = form.elements.word.value.trim().replace(/\s+/g, ' ');
+  const synonyms = form.elements.synonyms.value.trim();
+  const description = form.elements.description.value.trim();
+  if (!word || word.length > 80) { document.querySelector('#vocabulary-error').textContent = !word ? 'Informe a palavra.' : 'Use até 80 caracteres para a palavra.'; form.elements.word.setAttribute('aria-invalid', 'true'); form.elements.word.focus(); return; }
+  if (state.vocabulary.some(entry => normalize(entry.word) === normalize(word))) { document.querySelector('#vocabulary-error').textContent = 'Esta palavra já está no seu vocabulário.'; form.elements.word.setAttribute('aria-invalid', 'true'); form.elements.word.focus(); return; }
+  const now = Date.now();
+  state.vocabulary.unshift({ id: `word-${now}-${Math.random().toString(36).slice(2, 7)}`, word, synonyms, description, addedAt: now, updatedAt: now });
+  const persisted = persistVocabulary();
+  state.newWordDraft = { word: '', synonyms: '', description: '' };
+  state.vocabularyQuery = '';
+  go('palavras');
+  toast(persisted ? 'Palavra adicionada ao vocabulário.' : 'Palavra adicionada nesta sessão. Armazenamento local indisponível.');
+}
+function saveWordChanges(form) {
+  const current = wordFor(state.selectedWord);
+  if (!current) return;
+  const word = form.elements.word.value.trim().replace(/\s+/g, ' ');
+  const synonyms = form.elements.synonyms.value.trim();
+  const description = form.elements.description.value.trim();
+  if (!word || word.length > 80) { document.querySelector('#vocabulary-edit-error').textContent = !word ? 'Informe a palavra.' : 'Use até 80 caracteres para a palavra.'; form.elements.word.setAttribute('aria-invalid', 'true'); form.elements.word.focus(); return; }
+  if (state.vocabulary.some(entry => entry.id !== current.id && normalize(entry.word) === normalize(word))) { document.querySelector('#vocabulary-edit-error').textContent = 'Esta palavra já está no seu vocabulário.'; form.elements.word.setAttribute('aria-invalid', 'true'); form.elements.word.focus(); return; }
+  state.vocabulary = state.vocabulary.map(entry => entry.id === current.id ? { ...entry, word, synonyms, description, updatedAt: Date.now() } : entry);
+  const persisted = persistVocabulary();
+  modal.close();
+  go('palavra/' + encodeURIComponent(current.id));
+  toast(persisted ? 'Palavra atualizada.' : 'Palavra atualizada nesta sessão.');
+}
 function openNewTheme() {
   state.newThemeReturn = state.route === 'novo-tema' ? 'temas' : location.hash.slice(1) || 'temas';
   state.newThemeDraft = { name: '', description: '' };
@@ -307,12 +425,15 @@ function newThemeHTML() {
   return `<form class="new-theme-form" id="theme-form" novalidate><section class="new-theme-field"><div class="new-theme-label"><label for="theme-name">Nome do tema <span aria-hidden="true">◆</span><span class="sr-only"> (obrigatório)</span></label><output id="new-theme-name-count" for="theme-name">${state.newThemeDraft.name.length}/40</output></div><input id="theme-name" name="name" placeholder="Ex.: Memória" maxlength="40" value="${esc(state.newThemeDraft.name)}" required aria-describedby="theme-error"></section><section class="new-theme-field"><div class="new-theme-label"><label for="theme-description">Descrição</label><output id="new-theme-description-count" for="theme-description">${state.newThemeDraft.description.length}/280</output></div><textarea id="theme-description" name="description" placeholder="Opcional" maxlength="280">${esc(state.newThemeDraft.description)}</textarea></section><p class="field-error" id="theme-error" role="alert"></p><button type="submit" class="primary-button new-theme-save">${icon('check')} Salvar Tema</button></form>`;
 }
 function archiveHTML() {
-  const title = { inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: 'Temas', fonte: 'Fontes', 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', criar: state.editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[state.route];
-  const catalog = ['obras', 'temas', 'fichas'].includes(state.route);
-  const screenClass = { inicio: 'home-screen', criar: 'entry-screen', fichas: 'entries-screen', obras: 'sources-screen', temas: 'themes-screen', tema: 'theme-detail-screen', fonte: 'source-detail-screen', 'novo-tema': 'new-theme-screen', 'nova-fonte': 'new-source-screen' }[state.route] || '';
-  const heading = ['novo-tema', 'nova-fonte'].includes(state.route) ? `<div class="new-theme-heading"><button class="icon-button" data-action="${state.route === 'nova-fonte' ? 'cancel-new-source' : 'cancel-new-theme'}" aria-label="Fechar criação de ${state.route === 'nova-fonte' ? 'fonte' : 'tema'}">${icon('x')}</button><h1>${title}</h1></div>` : `<h1>${title}</h1>`;
-  const content = { criar: editorHTML, fichas: entriesHTML, obras: booksHTML, temas: themesHTML, tema: themeDetailHTML, fonte: sourceDetailHTML, 'novo-tema': newThemeHTML, 'nova-fonte': newSourceHTML }[state.route] || homeHTML;
-  const header = catalog || ['inicio', 'tema', 'fonte'].includes(state.route) ? `<h1 class="sr-only">${title}</h1>` : `<header class="archive-header">${heading}</header>`;
+  const title = { inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: 'Temas', fonte: 'Fontes', palavras: 'Palavras', palavra: 'Palavras', 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', 'nova-palavra': 'Nova Palavra', criar: state.editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[state.route];
+  const catalog = ['obras', 'temas', 'fichas', 'palavras'].includes(state.route);
+  const screenClass = { inicio: 'home-screen', criar: 'entry-screen', fichas: 'entries-screen', obras: 'sources-screen', temas: 'themes-screen', tema: 'theme-detail-screen', fonte: 'source-detail-screen', palavras: 'vocabulary-screen', palavra: 'word-detail-screen', 'novo-tema': 'new-theme-screen', 'nova-fonte': 'new-source-screen', 'nova-palavra': 'new-word-screen' }[state.route] || '';
+  const newFormRoute = ['novo-tema', 'nova-fonte', 'nova-palavra'].includes(state.route);
+  const cancelAction = { 'nova-fonte': 'cancel-new-source', 'nova-palavra': 'cancel-new-word', 'novo-tema': 'cancel-new-theme' }[state.route];
+  const createLabel = { 'nova-fonte': 'fonte', 'nova-palavra': 'palavra', 'novo-tema': 'tema' }[state.route];
+  const heading = newFormRoute ? `<div class="new-theme-heading"><button class="icon-button" data-action="${cancelAction}" aria-label="Fechar criação de ${createLabel}">${icon('x')}</button><h1>${title}</h1></div>` : `<h1>${title}</h1>`;
+  const content = { criar: editorHTML, fichas: entriesHTML, obras: booksHTML, temas: themesHTML, tema: themeDetailHTML, fonte: sourceDetailHTML, palavras: wordsHTML, palavra: wordDetailHTML, 'novo-tema': newThemeHTML, 'nova-fonte': newSourceHTML, 'nova-palavra': newWordHTML }[state.route] || homeHTML;
+  const header = catalog || ['inicio', 'tema', 'fonte', 'palavra'].includes(state.route) ? `<h1 class="sr-only">${title}</h1>` : `<header class="archive-header">${heading}</header>`;
   return `<section class="screen archive-screen ${screenClass}"><div class="archive-body">${header}<div class="archive-content">${content()}</div></div>${navHTML()}</section>`;
 }
 function updateResend() {
@@ -331,7 +452,14 @@ function render() {
   clearInterval(state.resendTimer);
   if (modal.open) modal.close();
   const next = location.hash.slice(1) || 'login';
-  state.route = ['login', 'codigo', 'inicio', 'fichas', 'obras', 'temas', 'criar', 'novo-tema', 'nova-fonte'].includes(next) ? next : 'login';
+  state.route = ['login', 'codigo', 'inicio', 'fichas', 'obras', 'temas', 'palavras', 'criar', 'novo-tema', 'nova-fonte', 'nova-palavra'].includes(next) ? next : 'login';
+  if (next.startsWith('palavra/')) {
+    let id = '';
+    try { id = decodeURIComponent(next.slice(8)); } catch { /* Invalid link falls back to vocabulary list. */ }
+    const word = wordFor(id);
+    state.route = word ? 'palavra' : 'palavras';
+    state.selectedWord = word?.id || '';
+  }
   if (next.startsWith('tema/')) {
     let name = '';
     try { name = decodeURIComponent(next.slice(5)); } catch { /* Invalid link falls back to themes. */ }
@@ -367,7 +495,7 @@ function render() {
   } else if (state.route === 'login') {
     updateLoginState();
   } else app.focus({ preventScroll: true });
-  document.title = `${{ login: 'Acesse Bloom', codigo: 'Código de Acesso', inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', tema: state.selectedTheme, fonte: bookFor(state.selectedSource)?.title, 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', criar: state.editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[state.route]} · Bloom`;
+  document.title = `${{ login: 'Acesse Bloom', codigo: 'Código de Acesso', inicio: 'Início', obras: 'Fontes', fichas: 'Fichas', temas: 'Temas', palavras: 'Palavras', palavra: wordFor(state.selectedWord)?.word, tema: state.selectedTheme, fonte: bookFor(state.selectedSource)?.title, 'novo-tema': 'Novo Tema', 'nova-fonte': 'Nova Fonte', 'nova-palavra': 'Nova Palavra', criar: state.editor?.id ? 'Editar Ficha' : 'Nova Ficha' }[state.route]} · Bloom`;
   if (state.route === 'tema' && state.pendingSourceSheet?.theme === state.selectedTheme) { const { bookId } = state.pendingSourceSheet; state.pendingSourceSheet = null; openThemeSource(bookId); }
 }
 function refreshHome() {
@@ -577,9 +705,9 @@ function openProfile() {
     <button class="icon-button profile-close" data-action="close-modal" aria-label="Fechar perfil" autofocus>${icon('x')}</button>
   </header>
   <form id="profile-name-form" class="profile-name-form" hidden novalidate><label class="field-label" for="profile-name">Nome do perfil</label><input id="profile-name" name="name" value="${esc(state.profileName)}" maxlength="80" autocomplete="nickname" required aria-describedby="profile-name-error"><p class="field-error" id="profile-name-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-action="profile-cancel-edit">Cancelar</button><button type="submit" class="primary-button">${icon('check')} Salvar nome</button></div></form>
-  <div class="profile-stats"><div><strong>${state.books.length}</strong><small>obras</small></div><div><strong>${state.reflections.length}</strong><small>reflexões</small></div><div><strong>${allThemes().length}</strong><small>temas</small></div></div>
+  <div class="profile-stats"><div><strong>${state.books.length}</strong><small>obras</small></div><div><strong>${state.reflections.length}</strong><small>reflexões</small></div><div><strong>${allThemes().length}</strong><small>temas</small></div><div><strong>${state.vocabulary.length}</strong><small>palavras</small></div></div>
   <p class="profile-note">Dados salvos neste navegador.</p>
-  <section class="profile-data" aria-labelledby="profile-data-title"><h3 id="profile-data-title">Dados do Bloom</h3><div class="profile-data-actions"><button class="secondary-button" data-action="export-archive">${icon('download')} Exportar JSON</button><button class="secondary-button" data-action="import-archive">${icon('upload')} Importar JSON</button></div><input type="file" id="archive-import-file" accept=".json,application/json" hidden><p id="archive-import-error" class="field-error" role="alert"></p><div class="profile-import-preview" id="archive-import-preview" hidden><p id="archive-import-summary"></p><p>A importação substitui as fontes, fichas e temas atuais pelos dados deste arquivo.</p><div class="modal-actions"><button class="secondary-button" data-action="cancel-archive-import">Cancelar</button><button class="primary-button" data-action="confirm-archive-import">Importar arquivo</button></div></div></section>
+  <section class="profile-data" aria-labelledby="profile-data-title"><h3 id="profile-data-title">Dados do Bloom</h3><div class="profile-data-actions"><button class="secondary-button" data-action="export-archive">${icon('download')} Exportar JSON</button><button class="secondary-button" data-action="import-archive">${icon('upload')} Importar JSON</button></div><input type="file" id="archive-import-file" accept=".json,application/json" hidden><p id="archive-import-error" class="field-error" role="alert"></p><div class="profile-import-preview" id="archive-import-preview" hidden><p id="archive-import-summary"></p><p>A importação substitui as fontes, fichas, temas e palavras atuais pelos dados deste arquivo.</p><div class="modal-actions"><button class="secondary-button" data-action="cancel-archive-import">Cancelar</button><button class="primary-button" data-action="confirm-archive-import">Importar arquivo</button></div></div></section>
 
   <button class="secondary-button profile-logout" data-action="logout">${icon('logout')} Sair do Bloom</button>`;
   showDialog(content, 'profile-modal');
@@ -591,7 +719,7 @@ function closeProfileNameEditor() {
   button.focus({ preventScroll: true });
 }
 function exportArchive() {
-  const data = { format: 'bloom-arquivo', version: 1, exportedAt: new Date().toISOString(), sources: state.books, reflections: state.reflections, themes: themeCatalog().map(({ name, description, addedAt }) => ({ name, description, addedAt: addedAt || 0 })) };
+  const data = { format: 'bloom-arquivo', version: 1, exportedAt: new Date().toISOString(), sources: state.books, reflections: state.reflections, themes: themeCatalog().map(({ name, description, addedAt }) => ({ name, description, addedAt: addedAt || 0 })), vocabulary: state.vocabulary.map(({ id, word, synonyms, description, addedAt, updatedAt }) => ({ id, word, synonyms, description, addedAt: addedAt || 0, updatedAt: updatedAt || 0 })) };
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = url;
@@ -631,7 +759,14 @@ function validateArchive(data) {
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) invalid();
     return { id: entry.id, bookId: entry.bookId, title: optionalText(entry.title), reference: optionalText(entry.reference), location: optionalText(entry.location), identifier: optionalText(entry.identifier), quote: optionalText(entry.quote), text: text(entry.text, true), tags, date };
   });
-  return { sources, reflections: entries, themes };
+  const wordIds = new Set();
+  const vocabulary = Array.isArray(data.vocabulary) ? data.vocabulary.map(item => {
+    if (!item || typeof item.id !== 'string' || !/^word-[a-z0-9-]+$/i.test(item.id) || item.id.length > 160 || wordIds.has(item.id)) invalid();
+    wordIds.add(item.id);
+    return { id: item.id, word: text(item.word, true).trim(), synonyms: optionalText(item.synonyms), description: optionalText(item.description), addedAt: timestamp(item.addedAt), updatedAt: timestamp(item.updatedAt) };
+  }) : [];
+  if (vocabulary.length > 10000) invalid();
+  return { sources, reflections: entries, themes, vocabulary };
 }
 async function prepareArchiveImport(input) {
   const file = input.files[0];
@@ -648,7 +783,7 @@ async function prepareArchiveImport(input) {
     let data;
     try { data = JSON.parse(content); } catch { throw new Error('Não foi possível ler o JSON. Verifique o arquivo e tente novamente.'); }
     state.pendingArchiveImport = validateArchive(data);
-    document.querySelector('#archive-import-summary').textContent = `${pendingArchiveImport.sources.length} fontes, ${pendingArchiveImport.reflections.length} fichas e ${pendingArchiveImport.themes.length} temas encontrados.`;
+    document.querySelector('#archive-import-summary').textContent = `${state.pendingArchiveImport.sources.length} fontes, ${state.pendingArchiveImport.reflections.length} fichas, ${state.pendingArchiveImport.themes.length} temas e ${state.pendingArchiveImport.vocabulary.length} palavras encontrados.`;
     preview.hidden = false;
   } catch (failure) {
     if (input.isConnected && modal.open) error.textContent = failure.message;
@@ -668,6 +803,7 @@ function importArchive() {
     'arquivo-theme-flow-demo-v1': true,
     'arquivo-source-flow-demo-v1': true,
     'arquivo-entry-draft-v2': null,
+    'arquivo-vocabulary-v1': data.vocabulary,
   };
   const previous = new Map();
   try {
@@ -678,11 +814,11 @@ function importArchive() {
     document.querySelector('#archive-import-error').textContent = 'Não foi possível salvar a importação neste navegador. Os dados atuais foram mantidos.';
     return;
   }
-  state.books = data.sources; state.reflections = data.reflections; state.customThemes = data.themes;
+  state.books = data.sources; state.reflections = data.reflections; state.customThemes = data.themes; state.vocabulary = data.vocabulary;
   state.deletedSources = removedSources; state.deletedThemes = removedThemes;
   clearTimeout(state.autosaveTimer); state.editor = null; state.sourceEntryDraft = null; state.pendingArchiveImport = null; state.pendingSourceSheet = null;
-  state.newSourceDraft = blankSource(); state.newThemeDraft = { name: '', description: '' };
-  state.query = ''; state.activeTheme = ''; state.sourceQuery = ''; state.themeQuery = ''; state.entryQuery = ''; state.sourceTheme = '';
+  state.newSourceDraft = blankSource(); state.newThemeDraft = { name: '', description: '' }; state.newWordDraft = { word: '', synonyms: '', description: '' };
+  state.query = ''; state.activeTheme = ''; state.sourceQuery = ''; state.themeQuery = ''; state.entryQuery = ''; state.sourceTheme = ''; state.vocabularyQuery = '';
   render(); openProfile(); toast('Arquivo importado com sucesso.');
 }
 function saveProfileName(form) {
@@ -858,6 +994,8 @@ const formHandlers = {
   'source-edit-form': saveSourceChanges,
   'theme-edit-form': saveThemeChanges,
   'theme-form': createTheme,
+  'vocabulary-form': createWord,
+  'vocabulary-edit-form': saveWordChanges,
   'source-form': createSource,
   'entry-theme-form': associateEntryTheme,
   'login-form': requestAccessCode,
@@ -866,17 +1004,18 @@ const formHandlers = {
 };
 
 export {
-  render, go, toast, refreshHome, refreshEntries, refreshSources, refreshThemes,
-  refreshSourceEntries, openEditor, openNewSource, openNewTheme, openTheme, openBook,
+  render, go, toast, refreshHome, refreshEntries, refreshSources, refreshThemes, refreshWords,
+  refreshSourceEntries, openEditor, openNewSource, openNewTheme, openNewWord, openTheme, openBook, openWord,
   openReflection, openProfile, openSourceEdit, confirmSourceDelete, deleteSelectedSource,
   openSourceEntryEdit, openThemeEdit, confirmThemeDelete, deleteSelectedTheme,
+  openWordEdit, confirmWordDelete, deleteSelectedWord,
   openThemeSource, openModal, exportArchive, importArchive, prepareArchiveImport,
   closeProfileNameEditor, addSourceEntryTag, confirmSourceEntryDelete, showSourceEntryEdit,
   archiveHTML, activateAccount, startCountdown, updateLoginState, autosaveEntry, entryTagsHTML,
   syncSourceEntryDraft, allThemes, clearFieldError, fieldErrorIds, formErrorIds,
   formHandlers, openSheet, showDialog,
-  saveProfileName, saveSourceEntry, saveSourceChanges, saveThemeChanges, createTheme, createSource,
+  saveProfileName, saveSourceEntry, saveSourceChanges, saveThemeChanges, saveWordChanges, createTheme, createSource, createWord,
   associateEntryTheme, requestAccessCode, confirmAccessCode, saveEntry,
-  readEntryFields, validateEntry, bookFor, themeCatalog, persistSources, persistThemeChange,
+  readEntryFields, validateEntry, bookFor, wordFor, themeCatalog, persistSources, persistThemeChange, persistVocabulary,
   finishSourceEntryChange,
 };

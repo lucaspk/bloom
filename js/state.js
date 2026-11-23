@@ -84,6 +84,20 @@ export function initAppState() {
   state.sourceSearchOpen = false;
   state.entryQuery = '';
   state.entrySort = 'recentes';
+  const storedVocabulary = storage.get('arquivo-vocabulary-v1', []);
+  state.vocabulary = Array.isArray(storedVocabulary) ? storedVocabulary.filter(w => w && typeof w.id === 'string' && typeof w.word === 'string' && w.word.trim()).map(w => ({
+    id: w.id,
+    word: w.word.trim(),
+    synonyms: typeof w.synonyms === 'string' ? w.synonyms : '',
+    description: typeof w.description === 'string' ? w.description : '',
+    addedAt: Number(w.addedAt) || 0,
+    updatedAt: Number(w.updatedAt) || 0,
+  })) : [];
+  state.vocabularyQuery = '';
+  state.vocabularySort = 'recentes';
+  state.selectedWord = '';
+  state.newWordDraft = { word: '', synonyms: '', description: '' };
+  state.newWordReturn = 'palavras';
   state.newThemeDraft = { name: '', description: '' };
   state.newThemeReturn = 'temas';
   state.newSourceDraft = blankSource();

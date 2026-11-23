@@ -31,6 +31,7 @@ const icons = {
   more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   order: '<path d="M8 4v16m-4-4 4 4 4-4m4 4V4m-4 4 4-4 4 4"/>',
   themes: '<circle cx="12" cy="12" r="2"/><circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="21" r="1.5"/><circle cx="4" cy="7" r="1.5"/><circle cx="20" cy="7" r="1.5"/><circle cx="4" cy="17" r="1.5"/><circle cx="20" cy="17" r="1.5"/><path d="M12 5v5m0 4v5M6 8l4 3m4 2 4 3M6 16l4-3m4-2 4-3"/>',
+  type: '<path d="M4 7h16M4 12h10M4 17h6"/><path d="M18 17h2v2"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.book}</svg>`;
 export { icons, icon };

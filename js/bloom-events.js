@@ -8,10 +8,11 @@ import { esc, normalize, validEmail, blankSource } from './lib/utils.js';
 import { icon } from './lib/icons.js';
 import { accountFor } from './state.js';
 import {
-  render, go, toast, refreshHome, refreshEntries, refreshSources, refreshThemes,
-  refreshSourceEntries, openEditor, openNewSource, openNewTheme, openTheme, openBook,
+  render, go, toast, refreshHome, refreshEntries, refreshSources, refreshThemes, refreshWords,
+  refreshSourceEntries, openEditor, openNewSource, openNewTheme, openNewWord, openTheme, openBook, openWord,
   openReflection, openProfile, openSourceEdit, confirmSourceDelete, deleteSelectedSource,
   openSourceEntryEdit, openThemeEdit, confirmThemeDelete, deleteSelectedTheme,
+  openWordEdit, confirmWordDelete, deleteSelectedWord,
   openThemeSource, openModal, exportArchive, importArchive, prepareArchiveImport,
   closeProfileNameEditor, addSourceEntryTag, confirmSourceEntryDelete, showSourceEntryEdit,
   activateAccount, startCountdown, updateLoginState, autosaveEntry, entryTagsHTML,
@@ -27,17 +28,20 @@ document.addEventListener('click', (event) => {
   if (button.matches('a')) event.preventDefault();
   const action = button.dataset.action;
   if (action === 'nav-route') {
-    const next = button.dataset.state.route;
+    const next = button.dataset.route;
     if (next === 'inicio') { state.query = ''; state.activeTheme = ''; }
     if (next === 'obras') state.sourceQuery = '';
     if (next === 'temas') state.themeQuery = '';
     if (next === 'fichas') state.entryQuery = '';
+    if (next === 'palavras') state.vocabularyQuery = '';
     go(next);
-  } else if (['menu-create-entry', 'menu-create-source', 'menu-create-theme'].includes(action)) {
+  } else if (['menu-create-entry', 'menu-create-source', 'menu-create-theme', 'menu-create-word'].includes(action)) {
     const summary = button.closest('.create-menu').querySelector('summary');
     button.closest('.create-menu').open = false;
     if (action === 'menu-create-entry') openEditor();
-    else { if (action === 'menu-create-source') openNewSource(); else openNewTheme(); state.opener = summary; }
+    else if (action === 'menu-create-source') { openNewSource(); state.opener = summary; }
+    else if (action === 'menu-create-word') { openNewWord(); state.opener = summary; }
+    else { openNewTheme(); state.opener = summary; }
   } else if (action === 'clear-entry-search') { state.entryQuery = ''; document.querySelector('#entry-search').value = ''; refreshEntries(); document.querySelector('#entry-search').focus(); }
   else if (action === 'google') {
     openModal('Continuar com o Google', `<div class="modal-body"><p class="modal-description">Escolha o perfil de demonstração para explorar o Bloom.</p><div class="profile-summary"><div class="profile-avatar">${icon('user')}</div><div><strong>Leitor Bloom</strong><small>leitor@exemplo.com</small></div></div><button class="primary-button" data-action="google-enter">Entrar com este perfil ${icon('arrow')}</button><p class="help">Login simulado para este protótipo.</p></div>`);
@@ -93,6 +97,14 @@ document.addEventListener('click', (event) => {
   else if (action === 'theme-create') openEditor(button.dataset.book, '', state.selectedTheme);
   else if (action === 'theme-edit-entry') openEditor('', button.dataset.id, state.selectedTheme);
   else if (action === 'clear-theme-search') { state.themeQuery = ''; const field = document.querySelector('#theme-search'); field.value = ''; refreshThemes(); field.focus(); }
+  else if (action === 'new-word') openNewWord();
+  else if (action === 'cancel-new-word') { state.newWordDraft = { word: '', synonyms: '', description: '' }; go(state.newWordReturn); }
+  else if (action === 'word-details') openWord(button.dataset.id);
+  else if (action === 'word-back') go('palavras');
+  else if (action === 'edit-word') openWordEdit();
+  else if (action === 'delete-word') confirmWordDelete();
+  else if (action === 'confirm-delete-word') deleteSelectedWord();
+  else if (action === 'clear-vocabulary-search') { state.vocabularyQuery = ''; const field = document.querySelector('#vocabulary-search'); field.value = ''; refreshWords(); field.focus(); }
   else if (action === 'create') { if (state.route !== 'criar' || !button.matches('a')) openEditor(button.dataset.book); }
   else if (action === 'edit') openEditor('', button.dataset.id, state.route === 'tema' ? state.selectedTheme : '');
   else if (action === 'entry-back') {
@@ -149,7 +161,21 @@ document.addEventListener('input', (event) => {
   if (field.id === 'source-search') { state.sourceQuery = field.value; refreshSources(); }
   if (field.id === 'source-entry-search') { state.sourceEntryQuery = field.value; refreshSourceEntries(); }
   if (field.id === 'theme-search') { state.themeQuery = field.value; refreshThemes(); }
-  if (field.id === 'entry-search') { state.entryQuery = field.value; refreshEntries(); }
+  if (field.id === 'entry-search') { state.entryQuery = field.value; refreshEntries();
+  }
+  if (field.id === 'vocabulary-search') { state.vocabularyQuery = field.value; refreshWords(); }
+  if (field.closest('#vocabulary-form')) {
+    const form = field.closest('#vocabulary-form');
+    state.newWordDraft = { word: form.elements.word.value, synonyms: form.elements.synonyms.value, description: form.elements.description.value };
+    document.querySelector('#new-vocabulary-word-count').textContent = `${state.newWordDraft.word.length}/80`;
+    document.querySelector('#new-vocabulary-synonyms-count').textContent = `${state.newWordDraft.synonyms.length}/280`;
+    document.querySelector('#new-vocabulary-description-count').textContent = `${state.newWordDraft.description.length}/500`;
+  }
+  if (field.closest('#vocabulary-edit-form')) {
+    document.querySelector('#vocabulary-word-count').textContent = `${document.querySelector('#edit-vocabulary-word').value.length}/80`;
+    document.querySelector('#vocabulary-synonyms-count').textContent = `${document.querySelector('#edit-vocabulary-synonyms').value.length}/280`;
+    document.querySelector('#vocabulary-description-count').textContent = `${document.querySelector('#edit-vocabulary-description').value.length}/500`;
+  }
   if (field.closest('#theme-form')) {
     const form = field.closest('#theme-form');
     state.newThemeDraft = { name: form.elements.name.value, description: form.elements.description.value };
@@ -195,6 +221,7 @@ document.addEventListener('change', (event) => {
   if (event.target.id === 'source-entry-sort') { state.sourceEntrySort = event.target.value; refreshSourceEntries(); }
   if (event.target.id === 'theme-sort') { state.themeSort = event.target.value; refreshThemes(); }
   if (event.target.id === 'entry-sort') { state.entrySort = event.target.value; refreshEntries(); }
+  if (event.target.id === 'vocabulary-sort') { state.vocabularySort = event.target.value; refreshWords(); }
 });
 document.addEventListener('keydown', (event) => {
   const field = event.target;
