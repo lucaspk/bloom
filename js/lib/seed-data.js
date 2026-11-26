@@ -33,3 +33,31 @@ const seedThemes = [
   { name: 'Esperança', description: 'O que sustenta a imaginação de um futuro possível diante da incerteza.' },
 ];
 export { seedBooks, seedReflections, seedThemes };
+
+// Archived UI fixtures. These are deliberately not imported by the application.
+export const themeFlowExamples = [
+      ['primeiro', 'Capítulo XXI · Pág. 112', 'A recusa em viver o afeto no instante em que ele se oferece decorre do receio da entrega. A leitura me faz pensar nas decisões que adiamos esperando uma certeza impossível.', 'Hesitação', 'Amanhã serei feliz! Mas a felicidade não tem o dia de amanhã; não pensa no futuro; ela só tem o presente…'],
+      ['primeiro', 'Capítulo XV · Pág. 84', 'Há encontros que só compreendemos depois da despedida. A memória guarda o que poderia ter sido, enquanto a vida continua a pedir presença.', 'Memória'],
+      ['primeiro', 'Capítulo XXII · Pág. 119', 'Quando a coragem chega tarde, resta aprender com a ausência. Quero reconhecer os momentos em que uma palavra simples pode mudar o rumo de uma relação.', 'Tempo'],
+      ['assia', 'Capítulo IX · Pág. 48', 'O silêncio também responde. Deixar uma conversa para depois pode transformar uma possibilidade de encontro numa distância difícil de atravessar.', 'Hesitação'],
+      ['assia', 'Capítulo XVI · Pág. 76', 'A dúvida parece proteger, mas cobra seu preço. Nesta leitura, vejo como o medo de escolher pode acabar escolhendo por nós.', 'Liberdade'],
+      ['assia', 'Capítulo XX · Pág. 95', 'A lembrança de uma chance perdida insiste porque continua fazendo perguntas. O que eu faria hoje com a coragem que não tive naquele dia?', 'Memória'],
+      ['ivan', 'Capítulo VI · Pág. 62', 'A rotina pode esconder aquilo que realmente desejamos. A consciência de que o tempo termina me leva a perguntar que encontros merecem mais atenção agora.', 'Finitude'],
+      ['ivan', 'Capítulo IX · Pág. 88', 'Uma vida guiada pela aprovação alheia pode deixar pouco espaço para a própria voz. Ainda há tempo para escutar o que fui adiando.', 'Autenticidade'],
+      ['lear', 'Ato V · Cena III', 'O reconhecimento tardio não desfaz a perda, mas muda a maneira de olhar para ela. O afeto precisa encontrar uma forma de ser dito enquanto há encontro.', 'Amor'],
+      ['primeiro', 'Capítulo II · Pág. 18', 'O primeiro afeto altera a maneira de observar o cotidiano. Pequenos gestos passam a carregar uma intensidade que antes eu não percebia.', 'Amor'],
+    ].map(([bookId, reference, text, tag, quote = ''], i) => ({ id: `theme-demo-${i + 1}`, bookId, reference, text, quote, tags: i === 9 ? [tag] : ['Oportunidades perdidas', tag], date: '2026-10-06' }));
+export const sourceFlowExamples = [
+      ['Ato II — O juramento', 'O sacrifício como único ato de soberania restante perante a rigidez moral do sertão.', ['Amor', 'Sacrifício'], 'Se hei de perder-te para a vida mundana, que me reste ao menos a certeza de que a alma foi fiel até a terra se fechar.'],
+      ['Ato III — O confronto na ribeira', 'A traição como imperativo trágico imposto pelo medo da exclusão comunitária.', ['Traição', 'Ingratidão'], 'O punhal que me fere dói menos que os olhos com que me miraste ao me entregar.'],
+      ['Ato I — O primeiro encontro', 'O despertar do amor como revelação trágica e prenúncio de comunhão inexorável.', ['Amor', 'Destino'], 'Antes de ver-te, Isaura, não sabia que a luz pudesse arder sem queimar…'],
+      ['Pág. 42 — A espera', 'A espera altera o valor de cada encontro. O afeto cresce entre pequenos gestos e as expectativas que depositamos no outro.', ['Amor', 'Esperança']],
+      ['Pág. 58 — A escolha', 'Uma escolha íntima também transforma as relações ao redor. A liberdade de amar encontra os limites das lealdades herdadas.', ['Amor', 'Liberdade']],
+      ['Pág. 75 — A despedida', 'A despedida revela o que a convivência tornava invisível. O amor permanece na maneira de recordar os dias partilhados.', ['Amor', 'Memória']],
+      ['Pág. 89 — A promessa', 'Renunciar pode ser uma forma de manter uma promessa. Pergunto-me quando essa fidelidade fortalece a vida e quando a reduz.', ['Sacrifício', 'Destino']],
+      ['Pág. 103 — A lealdade', 'As lealdades entram em conflito e nenhuma decisão parece sem custo. O sacrifício mostra os valores que escolhemos preservar.', ['Sacrifício', 'Liberdade']],
+      ['Pág. 116 — A ruptura', 'Uma confiança desfeita muda também a lembrança do passado. Os mesmos gestos passam a ser vistos sob uma nova luz.', ['Traição', 'Memória']],
+      ['Pág. 128 — O silêncio', 'A traição nem sempre começa num gesto evidente. Também pode surgir no silêncio de quem poderia ter estado presente.', ['Traição', 'Hesitação']],
+      ['Pág. 141 — O reconhecimento', 'A ausência de reconhecimento torna mais difícil sustentar a entrega. Esta leitura me faz pensar no cuidado como uma troca de atenção.', ['Ingratidão', 'Solidão']],
+      ['Pág. 153 — O destino', 'O que chamamos de destino talvez reúna circunstâncias e escolhas. A leitura deixa espaço para imaginar outros caminhos possíveis.', ['Destino', 'Tempo']],
+    ].map(([reference, text, tags, quote = ''], i) => ({ id: `source-demo-${i + 1}`, bookId: 'amor', reference, text, tags, quote, date: '2026-10-12' }));

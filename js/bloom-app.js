@@ -1,7 +1,6 @@
 'use strict';
 
-import { DEMO_CODE } from './lib/constants.js';
-import { seedBooks, seedThemes, seedReflections } from './lib/seed-data.js';
+import { AUTH_ENABLED, DEMO_CODE } from './lib/constants.js';
 import { storage } from './lib/storage.js';
 import { esc, normalize, emailKey, validEmail, validUsername, countLabel, tagName, blankSource, blankEntry } from './lib/utils.js';
 import { icon } from './lib/icons.js';
@@ -86,8 +85,7 @@ const bookFor = (id) => state.books.find((b) => b.id === id);
 const countFor = (id) => state.reflections.filter((r) => r.bookId === id).length;
 
 function themeCatalog() {
-  const seeds = seedThemes.filter(t => !state.deletedThemes.includes(normalize(t.name))).map(t => ({ ...t, originalName: t.name, ...state.customThemes.find(custom => custom.originalName === t.name) }));
-  const entries = [...seeds, ...state.customThemes.filter(t => !t.originalName), ...state.reflections.flatMap(r => r.tags).map(name => ({ name, description: '' }))];
+  const entries = [...state.customThemes, ...state.reflections.flatMap(r => r.tags).map(name => ({ name, description: '' }))];
   const seen = new Set();
   return entries.filter(t => { const key = normalize(t.name); if (seen.has(key)) return false; seen.add(key); return true; });
 }
@@ -154,7 +152,7 @@ function emptyHTML(title, description) { return `<div class="empty-state">${icon
 function dashboardHTML() {
   const recent = [...state.reflections].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const filtered = state.activeTheme ? recent.filter(r => r.tags.includes(state.activeTheme)) : recent.slice(0, 2);
-  return `<div class="dashboard-grid"><section class="module recent-reflections"><div class="section-heading"><h2>${state.activeTheme ? 'Reflexões por tema' : 'Últimas reflexões'}</h2><a class="view-all" href="#fichas">Ver todas ${icon('arrow')}</a></div>${state.activeTheme ? `<div class="filter-note">${icon('tag')}${esc(state.activeTheme)}<button class="text-button" data-action="clear-filter">Limpar filtro</button></div>` : ''}<div class="reflection-list">${filtered.length ? filtered.map(reflectionCard).join('') : emptyHTML('Uma conexão por fazer', 'Crie uma reflexão e associe este tema.')}</div></section><section class="module recent-sources"><div class="section-heading"><h2>Fontes recentes</h2><button class="view-all" data-action="all-books">Ver todas ${icon('arrow')}</button></div><div class="work-list">${state.books.slice(0, 2).map(workRow).join('')}</div></section></div>`;
+  return `<div class="dashboard-grid"><section class="module recent-reflections"><div class="section-heading"><h2>${state.activeTheme ? 'Reflexões por tema' : 'Últimas reflexões'}</h2><a class="view-all" href="#fichas">Ver todas ${icon('arrow')}</a></div>${state.activeTheme ? `<div class="filter-note">${icon('tag')}${esc(state.activeTheme)}<button class="text-button" data-action="clear-filter">Limpar filtro</button></div>` : ''}<div class="reflection-list">${filtered.length ? filtered.map(reflectionCard).join('') : emptyHTML(state.activeTheme ? 'Uma conexão por fazer' : 'Sua primeira reflexão', state.activeTheme ? 'Crie uma reflexão e associe este tema.' : 'Cadastre uma fonte e crie uma ficha para registrar o que a leitura deixou.')}</div></section><section class="module recent-sources"><div class="section-heading"><h2>Fontes recentes</h2><button class="view-all" data-action="all-books">Ver todas ${icon('arrow')}</button></div><div class="work-list">${state.books.length ? state.books.slice(0, 2).map(workRow).join('') : emptyHTML('Sua primeira fonte', 'Cadastre uma fonte em Fontes para começar suas fichas de leitura.')}</div></section></div>`;
 }
 function searchHTML() {
   const q = normalize(state.query);
@@ -279,7 +277,7 @@ function openSheet(title, subtitle, body, footer = '', className = '') {
   showDialog(`<div class="sheet-handle" aria-hidden="true"></div><header class="sheet-header"><div><h2 id="modal-title">${esc(title)}</h2>${subtitle ? `<p>${esc(subtitle)}</p>` : ''}</div><button class="sheet-close" data-action="close-modal" aria-label="Fechar">${icon('x')}</button></header>${body}${footer}`, 'sheet ' + className);
 }
 function themeEntryCard(r, index) {
-  return `<article class="theme-entry-card" data-entry="${esc(r.id)}"><div class="theme-entry-reference"><span>${icon('book')} ${esc(r.reference || 'Referência não informada')}</span><span class="entry-number">Ficha #${String(index + 1).padStart(2, '0')}</span></div>${r.title ? `<h3 class="theme-entry-title">${esc(r.title)}</h3>` : ''}${r.quote ? `<blockquote class="theme-entry-quote">«${esc(r.quote)}»</blockquote>` : ''}<div class="reader-reflection"><h3>${icon('write')} Reflexão</h3><p>${formatText(r.text)}</p></div><div class="theme-entry-footer"><div class="chip-list">${r.tags.map(tag => `<button class="chip ${normalize(tag) === normalize(selectedTheme) ? 'active' : ''}" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><details class="entry-actions"><summary aria-label="Ações da ficha ${index + 1}">${icon('more')}</summary><div><button data-action="theme-edit-entry" data-id="${esc(r.id)}">${icon('pencil')} Editar ficha</button><button data-action="reflection" data-id="${esc(r.id)}">${icon('book-open')} Ver ficha</button></div></details></div></article>`;
+  return `<article class="theme-entry-card" data-entry="${esc(r.id)}"><div class="theme-entry-reference"><span>${icon('book')} ${esc(r.reference || 'Referência não informada')}</span><span class="entry-number">Ficha #${String(index + 1).padStart(2, '0')}</span></div>${r.title ? `<h3 class="theme-entry-title">${esc(r.title)}</h3>` : ''}${r.quote ? `<blockquote class="theme-entry-quote">«${esc(r.quote)}»</blockquote>` : ''}<div class="reader-reflection"><h3>${icon('write')} Reflexão</h3><p>${formatText(r.text)}</p></div><div class="theme-entry-footer"><div class="chip-list">${r.tags.map(tag => `<button class="chip ${normalize(tag) === normalize(state.selectedTheme) ? 'active' : ''}" data-action="open-theme" data-tag="${esc(tag)}">${esc(tagName(tag))}</button>`).join('')}</div><details class="entry-actions"><summary aria-label="Ações da ficha ${index + 1}">${icon('more')}</summary><div><button data-action="theme-edit-entry" data-id="${esc(r.id)}">${icon('pencil')} Editar ficha</button><button data-action="reflection" data-id="${esc(r.id)}">${icon('book-open')} Ver ficha</button></div></details></div></article>`;
 }
 function openThemeSource(id) {
   const b = bookFor(id);
@@ -451,8 +449,11 @@ function render() {
   clearTimeout(state.authTimer);
   clearInterval(state.resendTimer);
   if (modal.open) modal.close();
-  const next = location.hash.slice(1) || 'login';
-  state.route = ['login', 'codigo', 'inicio', 'fichas', 'obras', 'temas', 'palavras', 'criar', 'novo-tema', 'nova-fonte', 'nova-palavra'].includes(next) ? next : 'login';
+  const defaultRoute = AUTH_ENABLED ? 'login' : 'inicio';
+  const next = location.hash.slice(1) || defaultRoute;
+  state.route = ['login', 'codigo', 'inicio', 'fichas', 'obras', 'temas', 'palavras', 'criar', 'novo-tema', 'nova-fonte', 'nova-palavra'].includes(next) ? next : defaultRoute;
+  if (!AUTH_ENABLED && ['login', 'codigo'].includes(state.route)) state.route = 'inicio';
+  if (state.route !== next && !next.includes('/')) history.replaceState(null, '', '#' + state.route);
   if (next.startsWith('palavra/')) {
     let id = '';
     try { id = decodeURIComponent(next.slice(8)); } catch { /* Invalid link falls back to vocabulary list. */ }
@@ -485,6 +486,8 @@ function render() {
   document.body.dataset.view = ['login', 'codigo'].includes(state.route) ? 'auth' : 'archive';
   document.querySelector('.brand').href = document.body.dataset.view === 'archive' ? '#inicio' : '#login';
   document.querySelector('.brand').setAttribute('aria-label', 'Bloom');
+  document.querySelector('.local-data-button').hidden = AUTH_ENABLED;
+  document.querySelector('.preview-link').hidden = !AUTH_ENABLED;
   app.innerHTML = state.route === 'login' ? loginHTML() : state.route === 'codigo' ? codeHTML() : archiveHTML();
   window.scrollTo({ top: 0, behavior: 'instant' });
   if (state.route === 'codigo') {
@@ -528,10 +531,10 @@ function matchingSourceEntries() {
 }
 function sourceFilterStatus() {
   const count = matchingSourceEntries().length;
-  return state.sourceEntryQuery.trim() ? `${count} ${count === 1 ? 'ficha encontrada' : 'fichas encontradas'}` : state.sourceTheme ? `Exibindo ${sourceTheme} (${count})` : `Exibindo todas fichas (${count})`;
+  return state.sourceEntryQuery.trim() ? `${count} ${count === 1 ? 'ficha encontrada' : 'fichas encontradas'}` : state.sourceTheme ? `Exibindo ${state.sourceTheme} (${count})` : `Exibindo todas fichas (${count})`;
 }
 function sourceEntryCard(r, index) {
-  return `<article class="source-entry-card" data-entry="${esc(r.id)}"><button class="source-entry-main" data-action="source-edit-entry" data-id="${esc(r.id)}" aria-label="Editar ficha ${index + 1}"><span class="source-entry-header"><span class="source-entry-heading">${icon('book')}<span>${esc(r.title || r.reference || 'Reflexão da leitura')}</span></span><span class="entry-number">${esc(r.identifier || `Ficha #${String(index + 1).padStart(2, '0')}`)}</span></span>${r.quote ? `<span class="source-entry-quote">«${esc(r.quote)}»</span>` : ''}<span class="source-entry-text">${formatText(r.text)}</span></button><div class="source-entry-tags">${r.tags.map(tag => `<button data-action="source-filter" data-tag="${esc(tag)}" class="${sourceTheme && normalize(tag) === normalize(sourceTheme) ? 'active' : ''}">${esc(tagName(tag))}</button>`).join('')}</div></article>`;
+  return `<article class="source-entry-card" data-entry="${esc(r.id)}"><button class="source-entry-main" data-action="source-edit-entry" data-id="${esc(r.id)}" aria-label="Editar ficha ${index + 1}"><span class="source-entry-header"><span class="source-entry-heading">${icon('book')}<span>${esc(r.title || r.reference || 'Reflexão da leitura')}</span></span><span class="entry-number">${esc(r.identifier || `Ficha #${String(index + 1).padStart(2, '0')}`)}</span></span>${r.quote ? `<span class="source-entry-quote">«${esc(r.quote)}»</span>` : ''}<span class="source-entry-text">${formatText(r.text)}</span></button><div class="source-entry-tags">${r.tags.map(tag => `<button data-action="source-filter" data-tag="${esc(tag)}" class="${state.sourceTheme && normalize(tag) === normalize(state.sourceTheme) ? 'active' : ''}">${esc(tagName(tag))}</button>`).join('')}</div></article>`;
 }
 function sourceEntryResultsHTML() {
   const entries = matchingSourceEntries();
@@ -541,7 +544,7 @@ function sourceEntryResultsHTML() {
 function sourceDetailHTML() {
   const b = bookFor(state.selectedSource);
   const entries = sourceEntries();
-  return `<div class="source-detail"><button class="theme-back text-button" data-action="source-back">${icon('back')} Todas as fontes</button><div class="source-title-row"><h2>${esc(b.title)}</h2><button class="icon-button" data-action="edit-source" aria-label="Editar fonte">${icon('pencil')}</button></div><p class="source-detail-author">${esc(b.author)}</p><button class="primary-button source-add-entry" data-action="source-create">${icon('plus')} Nova Ficha</button><section class="source-theme-filters"><div class="source-theme-heading"><h3>${icon('themes')} Temas da obra</h3><span id="source-filter-status" role="status">${esc(sourceFilterStatus())}</span></div><div class="source-filter-chips" role="group" aria-label="Filtrar fichas por tema"><button class="source-filter-chip ${sourceTheme ? '' : 'active'}" data-action="source-filter" data-tag="" aria-pressed="${!sourceTheme}">Todas <span>${entries.length}</span></button>${sourceThemes().map(tag => `<button class="source-filter-chip ${normalize(sourceTheme) === normalize(tag) ? 'active' : ''}" data-action="source-filter" data-tag="${esc(tag)}" aria-pressed="${normalize(sourceTheme) === normalize(tag)}">${esc(tag)} <span>${entries.filter(r => r.tags.some(t => normalize(t) === normalize(tag))).length}</span></button>`).join('')}</div><div class="source-entry-tools"><div class="entry-sort-control">${icon('order')}<select id="source-entry-sort" aria-label="Ordenar fichas da fonte">${[['recentes', 'Mais recentes'], ['antigas', 'Mais antigas'], ['referencia', 'Referência']].map(([value, label]) => `<option value="${value}" ${state.sourceEntrySort === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div><button class="icon-button" data-action="source-toggle-search" aria-label="Buscar fichas nesta fonte" aria-expanded="${sourceSearchOpen}" aria-controls="source-entry-search-wrap">${icon('search')}</button></div><div id="source-entry-search-wrap" class="search-wrap" ${sourceSearchOpen ? '' : 'hidden'}>${icon('search')}<input id="source-entry-search" type="search" placeholder="Buscar trecho ou reflexão..." aria-label="Buscar fichas nesta fonte" value="${esc(sourceEntryQuery)}"><button class="clear-search" data-action="source-clear-entry-search" aria-label="Limpar busca de fichas" ${sourceEntryQuery ? '' : 'hidden'}>${icon('x')}</button></div></section><div class="source-entry-list" id="source-entry-results" aria-live="polite">${sourceEntryResultsHTML()}</div></div>`;
+  return `<div class="source-detail"><button class="theme-back text-button" data-action="source-back">${icon('back')} Todas as fontes</button><div class="source-title-row"><h2>${esc(b.title)}</h2><button class="icon-button" data-action="edit-source" aria-label="Editar fonte">${icon('pencil')}</button></div><p class="source-detail-author">${esc(b.author)}</p><button class="primary-button source-add-entry" data-action="source-create">${icon('plus')} Nova Ficha</button><section class="source-theme-filters"><div class="source-theme-heading"><h3>${icon('themes')} Temas da obra</h3><span id="source-filter-status" role="status">${esc(sourceFilterStatus())}</span></div><div class="source-filter-chips" role="group" aria-label="Filtrar fichas por tema"><button class="source-filter-chip ${state.sourceTheme ? '' : 'active'}" data-action="source-filter" data-tag="" aria-pressed="${!state.sourceTheme}">Todas <span>${entries.length}</span></button>${sourceThemes().map(tag => `<button class="source-filter-chip ${normalize(state.sourceTheme) === normalize(tag) ? 'active' : ''}" data-action="source-filter" data-tag="${esc(tag)}" aria-pressed="${normalize(state.sourceTheme) === normalize(tag)}">${esc(tag)} <span>${entries.filter(r => r.tags.some(t => normalize(t) === normalize(tag))).length}</span></button>`).join('')}</div><div class="source-entry-tools"><div class="entry-sort-control">${icon('order')}<select id="source-entry-sort" aria-label="Ordenar fichas da fonte">${[['recentes', 'Mais recentes'], ['antigas', 'Mais antigas'], ['referencia', 'Referência']].map(([value, label]) => `<option value="${value}" ${state.sourceEntrySort === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div><button class="icon-button" data-action="source-toggle-search" aria-label="Buscar fichas nesta fonte" aria-expanded="${state.sourceSearchOpen}" aria-controls="source-entry-search-wrap">${icon('search')}</button></div><div id="source-entry-search-wrap" class="search-wrap" ${state.sourceSearchOpen ? '' : 'hidden'}>${icon('search')}<input id="source-entry-search" type="search" placeholder="Buscar trecho ou reflexão..." aria-label="Buscar fichas nesta fonte" value="${esc(state.sourceEntryQuery)}"><button class="clear-search" data-action="source-clear-entry-search" aria-label="Limpar busca de fichas" ${state.sourceEntryQuery ? '' : 'hidden'}>${icon('x')}</button></div></section><div class="source-entry-list" id="source-entry-results" aria-live="polite">${sourceEntryResultsHTML()}</div></div>`;
 }
 function refreshSourceEntries() {
   document.querySelector('#source-entry-results').innerHTML = sourceEntryResultsHTML();
@@ -550,7 +553,7 @@ function refreshSourceEntries() {
   document.querySelector('#source-entry-search-wrap .clear-search').hidden = !state.sourceEntryQuery;
 }
 function persistSources() {
-  return storage.set('arquivo-sources-v1', state.books.filter(b => { const seed = seedBooks.find(seed => seed.id === b.id); return !seed || b !== seed; }));
+  return storage.set('arquivo-sources-v1', state.books);
 }
 function openSourceEdit() {
   const b = bookFor(state.selectedSource);
@@ -567,7 +570,6 @@ function deleteSelectedSource() {
   const id = state.selectedSource;
   state.books = state.books.filter(b => b.id !== id);
   state.reflections = state.reflections.filter(r => r.bookId !== id);
-  if (seedBooks.some(b => b.id === id)) state.deletedSources = [...new Set([...state.deletedSources, id])];
   const draft = storage.get('arquivo-entry-draft-v2', null);
   if (draft?.bookId === id || draft?.context?.sourceId === id || draft?.context?.bookId === id) { state.editor = null; storage.set('arquivo-entry-draft-v2', null); }
   const sourcesSaved = persistSources();
@@ -603,7 +605,7 @@ function syncSourceEntryDraft() {
 }
 function refreshSourceEntryTags() {
   document.querySelector('#ficha-edit-tags').innerHTML = sourceEntryTagsHTML() + `<button class="ficha-new-tag" type="button" data-action="ficha-new-tag">${icon('plus')} Novo tema</button>`;
-  document.querySelector('#ficha-tag-count').textContent = `${sourceEntryDraft.tags.length} associados`;
+  document.querySelector('#ficha-tag-count').textContent = `${state.sourceEntryDraft.tags.length} associados`;
 }
 function addSourceEntryTag() {
   const field = document.querySelector('#ficha-tag-input');
@@ -666,7 +668,7 @@ function entryTagsHTML() {
 }
 function editorHTML() {
   return `<form id="reflection-form" class="entry-form" data-id="${esc(state.editor.id)}" novalidate>
-    <div class="entry-savebar"><button class="icon-button entry-back" type="button" data-action="entry-back" aria-label="Voltar ao Bloom">${icon('back')}</button><span class="entry-save-status" role="status"><span class="status-dot"></span><span id="entry-save-label">${state.editor.text || state.editor.title ? 'Salvo automaticamente' : 'Rascunho vazio'}</span></span><button class="primary-button entry-save" type="submit">${icon('check')} Salvar</button></div>
+    <div class="entry-savebar"><button class="icon-button entry-back" type="button" data-action="entry-back" aria-label="Voltar ao Bloom">${icon('back')}</button><span class="entry-save-status" role="status"><span class="status-dot"></span><span id="entry-save-label">${state.editor.text || state.editor.title ? 'Rascunho recuperado' : 'Rascunho vazio'}</span></span><button class="primary-button entry-save" type="submit">${icon('check')} Salvar</button></div>
     <input class="entry-title" id="reflection-title" name="title" placeholder="Título (opcional)" aria-label="Título da ficha" maxlength="200" value="${esc(state.editor.title)}">
     <section class="entry-metadata" aria-label="Obra, referência e temas"><div class="entry-source"><select id="reflection-book" name="bookId" aria-label="Obra" required aria-describedby="reflection-error"><option value="">Selecionar fonte *</option>${state.books.map((b) => `<option value="${b.id}" ${state.editor.bookId === b.id ? 'selected' : ''}>${esc(b.title)} — ${esc(b.author)}</option>`).join('')}</select></div><div class="entry-reference"><input id="reflection-reference" name="reference" placeholder="Capítulo, página ou referência" aria-label="Referência na obra" maxlength="160" value="${esc(state.editor.reference)}"></div><div class="entry-tags" id="entry-tags">${entryTagsHTML()}</div><button type="button" class="entry-add-theme" data-action="add-entry-tag">${icon('plus')} Tema</button></section>
     <section class="entry-quote"><div class="entry-section-header"><label for="reflection-quote">${icon('quote')} Trecho da obra</label><button type="button" class="entry-copy" data-action="copy-quote" aria-label="Copiar trecho da obra">${icon('copy')}</button></div><textarea id="reflection-quote" name="quote" placeholder="" aria-label="Trecho da obra" maxlength="5000">${esc(state.editor.quote)}</textarea></section>
@@ -682,7 +684,7 @@ function autosaveEntry() {
   const status = document.querySelector('#entry-save-label');
   status.textContent = 'Salvando…';
   clearTimeout(state.autosaveTimer);
-  state.autosaveTimer = setTimeout(() => { if (status.isConnected) status.textContent = persisted ? 'Salvo automaticamente' : 'Salvo nesta sessão'; }, 350);
+  state.autosaveTimer = setTimeout(() => { if (status.isConnected) status.textContent = persisted ? 'Rascunho salvo neste navegador' : 'Rascunho apenas nesta sessão'; }, 350);
 }
 function formatEntry(kind) {
   const field = document.querySelector('#reflection-text');
@@ -701,15 +703,15 @@ function openProfile() {
   state.pendingArchiveImport = null;
   const content = `<header class="profile-header">
     <div class="profile-avatar">${icon('user')}</div>
-    <div class="profile-identity"><div class="profile-name-row"><h2 id="modal-title">${esc(state.profileName)}</h2><button class="profile-edit-name" data-action="profile-edit-name" aria-label="Editar nome do perfil" aria-controls="profile-name-form" aria-expanded="false">${icon('pencil')}</button></div><p class="profile-email">${esc(state.email)}</p></div>
+    <div class="profile-identity"><div class="profile-name-row"><h2 id="modal-title">${esc(state.profileName)}</h2><button class="profile-edit-name" data-action="profile-edit-name" aria-label="Editar nome do perfil" aria-controls="profile-name-form" aria-expanded="false">${icon('pencil')}</button></div><p class="profile-email">${AUTH_ENABLED ? esc(state.email) : 'Perfil local · sem conta'}</p></div>
     <button class="icon-button profile-close" data-action="close-modal" aria-label="Fechar perfil" autofocus>${icon('x')}</button>
   </header>
   <form id="profile-name-form" class="profile-name-form" hidden novalidate><label class="field-label" for="profile-name">Nome do perfil</label><input id="profile-name" name="name" value="${esc(state.profileName)}" maxlength="80" autocomplete="nickname" required aria-describedby="profile-name-error"><p class="field-error" id="profile-name-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary-button" data-action="profile-cancel-edit">Cancelar</button><button type="submit" class="primary-button">${icon('check')} Salvar nome</button></div></form>
   <div class="profile-stats"><div><strong>${state.books.length}</strong><small>obras</small></div><div><strong>${state.reflections.length}</strong><small>reflexões</small></div><div><strong>${allThemes().length}</strong><small>temas</small></div><div><strong>${state.vocabulary.length}</strong><small>palavras</small></div></div>
-  <p class="profile-note">Dados salvos neste navegador.</p>
+  <p class="profile-note">Seus dados ficam apenas neste navegador, neste dispositivo. Limpar os dados do site pode apagá-los. Exporte um backup para guardar ou transferir suas leituras.</p>
   <section class="profile-data" aria-labelledby="profile-data-title"><h3 id="profile-data-title">Dados do Bloom</h3><div class="profile-data-actions"><button class="secondary-button" data-action="export-archive">${icon('download')} Exportar JSON</button><button class="secondary-button" data-action="import-archive">${icon('upload')} Importar JSON</button></div><input type="file" id="archive-import-file" accept=".json,application/json" hidden><p id="archive-import-error" class="field-error" role="alert"></p><div class="profile-import-preview" id="archive-import-preview" hidden><p id="archive-import-summary"></p><p>A importação substitui as fontes, fichas, temas e palavras atuais pelos dados deste arquivo.</p><div class="modal-actions"><button class="secondary-button" data-action="cancel-archive-import">Cancelar</button><button class="primary-button" data-action="confirm-archive-import">Importar arquivo</button></div></div></section>
 
-  <button class="secondary-button profile-logout" data-action="logout">${icon('logout')} Sair do Bloom</button>`;
+  ${AUTH_ENABLED ? `<button class="secondary-button profile-logout" data-action="logout">${icon('logout')} Sair do Bloom</button>` : ''}`;
   showDialog(content, 'profile-modal');
 }
 function closeProfileNameEditor() {
@@ -737,9 +739,9 @@ function validateArchive(data) {
   const timestamp = (value) => { if (value === undefined) return 0; if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) invalid(); return value; };
   const sourceIds = new Set();
   const sources = data.sources.map(source => {
-    if (!source || typeof source.id !== 'string' || !(/^source-[a-z0-9-]+$/.test(source.id) || seedBooks.some(b => b.id === source.id)) || source.id.length > 160 || sourceIds.has(source.id)) invalid();
+    if (!source || typeof source.id !== 'string' || !/^[a-z0-9-]+$/.test(source.id) || source.id.length > 160 || sourceIds.has(source.id)) invalid();
     sourceIds.add(source.id);
-    return { id: source.id, title: text(source.title, true), author: text(source.author, true), year: optionalText(source.year), bibliography: optionalText(source.bibliography), description: optionalText(source.description), color: seedBooks.find(b => b.id === source.id)?.color || '#343126', addedAt: timestamp(source.addedAt) };
+    return { id: source.id, title: text(source.title, true), author: text(source.author, true), year: optionalText(source.year), bibliography: optionalText(source.bibliography), description: optionalText(source.description), color: '#343126', addedAt: timestamp(source.addedAt) };
   });
   const themeNames = new Set();
   const themes = data.themes.map(theme => {
@@ -792,16 +794,15 @@ async function prepareArchiveImport(input) {
 function importArchive() {
   if (!state.pendingArchiveImport) return;
   const data = state.pendingArchiveImport;
-  const removedSources = seedBooks.filter(b => !data.sources.some(source => source.id === b.id)).map(b => b.id);
-  const removedThemes = seedThemes.map(t => normalize(t.name));
+  const removedSources = [];
+  const removedThemes = [];
   const updates = {
     'arquivo-sources-v1': data.sources,
     'arquivo-deleted-sources-v1': removedSources,
     'arquivo-reflections-v1': data.reflections,
     'arquivo-themes-v1': data.themes,
     'arquivo-deleted-themes-v1': removedThemes,
-    'arquivo-theme-flow-demo-v1': true,
-    'arquivo-source-flow-demo-v1': true,
+    'bloom-clean-archive-v1': true,
     'arquivo-entry-draft-v2': null,
     'arquivo-vocabulary-v1': data.vocabulary,
   };
@@ -871,10 +872,6 @@ function saveThemeChanges(form) {
   if (themeCatalog().some(t => normalize(t.name) !== normalize(theme.name) && normalize(t.name) === normalize(name))) { document.querySelector('#theme-edit-error').textContent = 'Este tema já existe no Bloom.'; form.elements.name.setAttribute('aria-invalid', 'true'); form.elements.name.focus(); return; }
   state.customThemes = state.customThemes.filter(t => normalize(t.name) !== normalize(theme.name));
   state.customThemes.unshift({ name, description, originalName: theme.originalName || '', addedAt: theme.addedAt || Date.now() });
-  // A newly named theme can reuse the name of a previously removed seed.
-  const renamedSeed = seedThemes.find(t => normalize(t.name) === normalize(name));
-  if (renamedSeed && renamedSeed.name !== theme.originalName) state.deletedThemes = [...new Set([...state.deletedThemes, normalize(renamedSeed.name)])];
-  storage.set('arquivo-deleted-themes-v1', state.deletedThemes);
   const persisted = persistThemeChange(theme.name, name);
   openTheme(name);
   toast(persisted ? 'Tema atualizado no Bloom.' : 'Tema atualizado nesta sessão.');
@@ -1017,5 +1014,5 @@ export {
   saveProfileName, saveSourceEntry, saveSourceChanges, saveThemeChanges, saveWordChanges, createTheme, createSource, createWord,
   associateEntryTheme, requestAccessCode, confirmAccessCode, saveEntry,
   readEntryFields, validateEntry, bookFor, wordFor, themeCatalog, persistSources, persistThemeChange, persistVocabulary,
-  finishSourceEntryChange,
+  finishSourceEntryChange, formatEntry, refreshSourceEntryTags,
 };

@@ -730,6 +730,9 @@ body[data-view="archive"] #app { max-width: 1120px; }
 .archive-profile { display: none; }
 .preview-link { color: var(--muted); font-size: 12px; }
 .preview-link:hover { color: var(--text); }
+.local-data-button { margin-left: auto; margin-right: 14px; padding: 8px 0; border: 0; background: transparent; color: var(--muted); font-size: 14px; }
+.local-data-button:hover { color: var(--text); }
+.storage-warning { width: calc(100% - 40px); max-width: 1120px; margin: 0 auto 20px; padding: 12px 16px; border: 1px solid var(--error); border-radius: var(--radius); color: var(--error); font-size: 14px; }
 body[data-view="auth"] .prototype-header { margin-bottom: 32px; }
 body[data-view="archive"] .preview-link { display: none; }
 body[data-view="archive"] .archive-profile { display: grid; }

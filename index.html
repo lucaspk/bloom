@@ -11,10 +11,12 @@
   </head>
   <body>
     <header class="prototype-header">
-      <a class="brand" href="#login" aria-label="Bloom, voltar ao acesso"><span data-icon="book-open"></span><span>Bloom<span class="brand-period">.</span></span></a>
-      <a class="preview-link" href="#inicio">Explorar</a>
+      <a class="brand" href="#inicio" aria-label="Bloom, voltar ao início"><span data-icon="book-open"></span><span>Bloom<span class="brand-period">.</span></span></a>
+      <button class="local-data-button" data-action="profile" hidden>Dados neste navegador</button>
+      <a class="preview-link" href="#inicio" hidden>Explorar</a>
       <button class="profile-button archive-profile" data-action="profile" aria-label="Abrir perfil"><span data-icon="user"></span></button>
     </header>
+    <p id="storage-warning" class="storage-warning" role="alert" hidden>Não foi possível salvar neste navegador. Exporte seus dados pelo perfil antes de fechar esta página.</p>
     <main id="app" tabindex="-1"></main>
     <dialog id="modal" aria-labelledby="modal-title"></dialog>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>

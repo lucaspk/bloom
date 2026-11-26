@@ -17,7 +17,8 @@ import {
   closeProfileNameEditor, addSourceEntryTag, confirmSourceEntryDelete, showSourceEntryEdit,
   activateAccount, startCountdown, updateLoginState, autosaveEntry, entryTagsHTML,
   syncSourceEntryDraft, allThemes, clearFieldError, fieldErrorIds, formErrorIds,
-  formHandlers, readEntryFields, bookFor,
+  formHandlers, readEntryFields, bookFor, formatEntry, refreshSourceEntryTags,
+  archiveHTML, finishSourceEntryChange,
 } from './bloom-app.js';
 
 document.addEventListener('click', (event) => {
@@ -179,8 +180,8 @@ document.addEventListener('input', (event) => {
   if (field.closest('#theme-form')) {
     const form = field.closest('#theme-form');
     state.newThemeDraft = { name: form.elements.name.value, description: form.elements.description.value };
-    document.querySelector('#new-theme-name-count').textContent = `${newThemeDraft.name.length}/40`;
-    document.querySelector('#new-theme-description-count').textContent = `${newThemeDraft.description.length}/280`;
+    document.querySelector('#new-theme-name-count').textContent = `${state.newThemeDraft.name.length}/40`;
+    document.querySelector('#new-theme-description-count').textContent = `${state.newThemeDraft.description.length}/280`;
   }
   if (field.closest('#theme-edit-form')) {
     document.querySelector('#theme-name-count').textContent = `${document.querySelector('#edit-theme-name').value.length}/40`;
